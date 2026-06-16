@@ -1,5 +1,5 @@
-# Replace the age public key with yours: age-keygen -y ~/.config/sops/age/keys.txt
+# Replace the age public key with yours: age-keygen -y < ~/.config/sops/age/keys.txt
 creation_rules:
   - path_regex: secrets\.enc\.yaml$
     encrypted_regex: '^(proxmox_api_token|git_token|sops_age_private_key)$'
-    age: REPLACE_WITH_YOUR_AGE_PUBLIC_KEY
+    age: age1rmm7srdkne4js7edykzgk39ltvamkps0y88xe4mxkx7gz7rmf3eqvvg4u5
