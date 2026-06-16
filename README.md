@@ -1,8 +1,30 @@
-# keller.io — Infrastructure
+<div align="center">
+
+# 🏗️ keller.io — Infrastructure
+
+**Der Cluster-Unterbau als Code — von der VM bis zu Argo CD.**
 
 Provisionierung und Lifecycle-Management des **Talos-Linux**-Clusters für den
-keller.io-Homelab — deklarativ über [**OpenTofu**](https://opentofu.org/). Dieses
-Repo erzeugt die Proxmox-VMs, installiert Talos, bootstrapped Kubernetes und
+keller.io-Homelab, deklarativ über [**OpenTofu**](https://opentofu.org/).
+
+<br>
+
+[![CI](https://github.com/keller-IO/infrastructure/actions/workflows/ci.yml/badge.svg)](https://github.com/keller-IO/infrastructure/actions/workflows/ci.yml)
+[![SOPS](https://img.shields.io/badge/secrets-SOPS_%2B_age-2F855A?logo=gnuprivacyguard&logoColor=white)](https://github.com/getsops/sops)
+[![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
+![Last commit](https://img.shields.io/github/last-commit/keller-IO/infrastructure?logo=git&logoColor=white)
+
+[![OpenTofu](https://img.shields.io/badge/OpenTofu-FFDA18?logo=opentofu&logoColor=black)](https://opentofu.org/)
+[![Talos Linux](https://img.shields.io/badge/Talos_Linux-FF7300?logo=talos&logoColor=white)](https://www.talos.dev/)
+[![Proxmox](https://img.shields.io/badge/Proxmox_VE-E57000?logo=proxmox&logoColor=white)](https://www.proxmox.com/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![Argo CD](https://img.shields.io/badge/Argo_CD-EF7B4D?logo=argo&logoColor=white)](https://argo-cd.readthedocs.io/)
+
+</div>
+
+---
+
+Dieses Repo erzeugt die Proxmox-VMs, installiert Talos, bootstrapped Kubernetes und
 installiert **Argo CD**. Ab dort übernimmt GitOps
 ([`kubernetes-gitops`](https://github.com/keller-IO/kubernetes-gitops)) den Rest des
 Clusters.
@@ -21,6 +43,7 @@ Clusters.
 - [Deployment](#deployment)
 - [Secrets verwalten (SOPS + age)](#secrets-verwalten-sops--age)
 - [Weiterführende Dokumentation](#weiterführende-dokumentation)
+- [Lizenz](#lizenz)
 
 ---
 
@@ -120,3 +143,9 @@ Vollständige Anleitung (benötigte Keys, Argo-CD-/KSOPS-Verdrahtung) in der
 - [`AGENTS.md`](AGENTS.md) — Architektur-Prinzipien & Arbeitsregeln
 - [`tofu/talos-cluster/envs/kellerIO/README.md`](tofu/talos-cluster/envs/kellerIO/README.md) — Umgebungs-Details, Topologie, Bootstrap
 - [`kubernetes-gitops`](https://github.com/keller-IO/kubernetes-gitops) — Workloads & GitOps
+
+---
+
+## Lizenz
+
+Veröffentlicht unter der [BSD-3-Clause-Lizenz](LICENSE).
