@@ -128,7 +128,7 @@ Secrets werden **nie im Klartext** committet. Sie werden mit SOPS/age verschlüs
 
 ```bash
 age-keygen -o ~/.config/sops/age/keys.txt    # 1. age-Schlüssel erzeugen (privat!)
-age-keygen -y ~/.config/sops/age/keys.txt    #    Public Key in .sops.yaml eintragen
+age-keygen -y < ~/.config/sops/age/keys.txt  #    Public Key in .sops.yaml eintragen
 just env secrets-encrypt                      # 2. secrets.yaml -> secrets.enc.yaml
 just env secrets-edit                         #    später bearbeiten
 ```
