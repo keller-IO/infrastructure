@@ -6,7 +6,7 @@
 proxmox_endpoint = "https://cloud61:8006"
 
 cluster_name        = "kellerio"
-cluster_endpoint_ip = "192.168.2.69" # control-plane VIP (unused IP just below the node range)
+cluster_endpoint_ip = "192.168.2.80" # control-plane VIP (unused IP just below the node range)
 
 # Worker defaults (workers inherit these; control planes override below).
 # No Longhorn disk: kellerIO uses an external Ceph cluster via ceph-csi.
@@ -27,13 +27,13 @@ iso_storage_id = "NFS-Storage"
 #   role = "worker"                                   -> dedicated worker (uses defaults)
 # Control planes are manager-only (allow_scheduling = false). Storage for workloads
 # comes from the external Ceph cluster, so no node carries a local data disk.
-# IPs start at 192.168.2.70; VMs are spread across cloud64/65/62/61.
+# IPs start at 192.168.2.81; VMs are spread across cloud64/65/62/61.
 nodes = [
   # --- Control plane (manager-only, smaller footprint) ---
   {
     name             = "kellerio-cp1"
     target_pve       = "cloud64"
-    ip_address       = "192.168.2.70"
+    ip_address       = "192.168.2.81"
     role             = "controlplane"
     allow_scheduling = false
     cpu_cores        = 2
@@ -43,7 +43,7 @@ nodes = [
   {
     name             = "kellerio-cp2"
     target_pve       = "cloud65"
-    ip_address       = "192.168.2.71"
+    ip_address       = "192.168.2.82"
     role             = "controlplane"
     allow_scheduling = false
     cpu_cores        = 2
@@ -53,7 +53,7 @@ nodes = [
   {
     name             = "kellerio-cp3"
     target_pve       = "cloud62"
-    ip_address       = "192.168.2.72"
+    ip_address       = "192.168.2.83"
     role             = "controlplane"
     allow_scheduling = false
     cpu_cores        = 2
@@ -65,19 +65,19 @@ nodes = [
   {
     name       = "kellerio-wrk1"
     target_pve = "cloud61"
-    ip_address = "192.168.2.73"
+    ip_address = "192.168.2.84"
     role       = "worker"
   },
   {
     name       = "kellerio-wrk2"
     target_pve = "cloud64"
-    ip_address = "192.168.2.74"
+    ip_address = "192.168.2.85"
     role       = "worker"
   },
   {
     name       = "kellerio-wrk3"
     target_pve = "cloud65"
-    ip_address = "192.168.2.75"
+    ip_address = "192.168.2.86"
     role       = "worker"
   },
 ]

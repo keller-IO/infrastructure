@@ -24,17 +24,17 @@ modules, so the modules stay GitOps-agnostic.
 
 ## Topology
 
-Talos **v1.13.4** (latest stable). Node IPs start at `192.168.2.70`; the
-control-plane VIP / Kubernetes API endpoint is `192.168.2.69`.
+Talos **v1.13.4** (latest stable). Node IPs start at `192.168.2.81`; the
+control-plane VIP / Kubernetes API endpoint is `192.168.2.80`.
 
 | Node | Role | Proxmox host | IP | vCPU | RAM | OS disk |
 |---|---|---|---|---|---|---|
-| kellerio-cp1 | controlplane (manager-only) | cloud64 | 192.168.2.70 | 2 | 8 GiB | 40 GB |
-| kellerio-cp2 | controlplane (manager-only) | cloud65 | 192.168.2.71 | 2 | 8 GiB | 40 GB |
-| kellerio-cp3 | controlplane (manager-only) | cloud62 | 192.168.2.72 | 2 | 8 GiB | 40 GB |
-| kellerio-wrk1 | worker (defaults) | cloud61 | 192.168.2.73 | 4 | 16 GiB | 40 GB |
-| kellerio-wrk2 | worker (defaults) | cloud64 | 192.168.2.74 | 4 | 16 GiB | 40 GB |
-| kellerio-wrk3 | worker (defaults) | cloud65 | 192.168.2.75 | 4 | 16 GiB | 40 GB |
+| kellerio-cp1 | controlplane (manager-only) | cloud64 | 192.168.2.81 | 2 | 8 GiB | 40 GB |
+| kellerio-cp2 | controlplane (manager-only) | cloud65 | 192.168.2.82 | 2 | 8 GiB | 40 GB |
+| kellerio-cp3 | controlplane (manager-only) | cloud62 | 192.168.2.83 | 2 | 8 GiB | 40 GB |
+| kellerio-wrk1 | worker (defaults) | cloud61 | 192.168.2.84 | 4 | 16 GiB | 40 GB |
+| kellerio-wrk2 | worker (defaults) | cloud64 | 192.168.2.85 | 4 | 16 GiB | 40 GB |
+| kellerio-wrk3 | worker (defaults) | cloud65 | 192.168.2.86 | 4 | 16 GiB | 40 GB |
 
 Workers inherit the `default_*` variables; control planes override them with a
 smaller footprint and `allow_scheduling = false` (no workloads). No node carries a
