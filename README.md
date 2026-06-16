@@ -142,6 +142,7 @@ Vollständige Anleitung (benötigte Keys, Argo-CD-/KSOPS-Verdrahtung) in der
 
 - [`AGENTS.md`](AGENTS.md) — Architektur-Prinzipien & Arbeitsregeln
 - [`tofu/talos-cluster/envs/kellerIO/README.md`](tofu/talos-cluster/envs/kellerIO/README.md) — Umgebungs-Details, Topologie, Bootstrap
+- [`docs/runbooks/day2-operations.md`](docs/runbooks/day2-operations.md) — Day-2 Ops: Nodes, Upgrades, Schematic, Destroy
 - [`kubernetes-gitops`](https://github.com/keller-IO/kubernetes-gitops) — Workloads & GitOps
 
 ---
