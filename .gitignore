@@ -1,0 +1,55 @@
+# --- OpenTofu / Terraform ---
+# Local provider/module caches & plugins (re-downloaded by `tofu init`)
+.terraform/
+.terraform.tfstate.lock.info
+# State — lives in a backend, never in git
+*.tfstate
+*.tfstate.*
+# Crash & plan artifacts
+crash.log
+crash.*.log
+*.tfplan
+tfplan
+# The dependency lock file *is* committed — do not ignore .terraform.lock.hcl
+
+# --- Secrets / SOPS / age (NEVER commit plaintext) ---
+# Private age keys
+*.agekey
+*.age
+age.key
+key.txt
+keys.txt
+.sops/
+# Plaintext secrets — only the *.enc.yaml encrypted form belongs in git
+secrets.yaml
+secrets.auto.tfvars
+*.dec
+*.dec.yaml
+*.decrypted
+.env
+.env.*
+!.env.example
+
+# --- Cluster access material (written by `tofu apply`) ---
+talosconfig
+*.talosconfig
+kubeconfig
+*.kubeconfig
+.kube/
+
+# --- Nix ---
+result
+result-*
+.direnv/
+.envrc.local
+
+# --- Editors / IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- OS ---
+.DS_Store
+Thumbs.db

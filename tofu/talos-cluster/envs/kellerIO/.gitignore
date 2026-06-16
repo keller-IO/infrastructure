@@ -1,0 +1,4 @@
+talosconfig
+kubeconfig
+secrets.yaml
+secrets.auto.tfvars

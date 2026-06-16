@@ -1,0 +1,40 @@
+init:
+    tofu init
+
+fmt:
+    tofu fmt -check -recursive
+
+validate:
+    tofu validate
+
+plan:
+    tofu plan
+
+apply:
+    tofu apply
+
+# Remove cluster-internal resources before a full destroy
+destroy:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Removing Argo CD from the cluster..."
+    tofu destroy -target=helm_release.argocd -auto-approve
+    echo "Destroying infrastructure..."
+    tofu destroy
+
+# Destroy only the Talos VMs (keeps cluster secrets in state)
+destroy-cluster:
+    tofu destroy -target='module.nodes.proxmox_virtual_environment_vm.talos_node'
+
+secrets-edit:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    test -f secrets.enc.yaml || { echo "Create secrets.enc.yaml first (see secrets.enc.yaml.example)"; exit 1; }
+    sops secrets.enc.yaml
+
+secrets-encrypt:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    test -f secrets.yaml || { echo "Copy secrets.enc.yaml.example to secrets.yaml and fill in values"; exit 1; }
+    sops -e secrets.yaml > secrets.enc.yaml
+    echo "Created secrets.enc.yaml — remove secrets.yaml if you no longer need the plaintext copy."
