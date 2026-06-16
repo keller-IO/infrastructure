@@ -29,12 +29,12 @@ control-plane VIP / Kubernetes API endpoint is `192.168.2.80`.
 
 | Node | Role | Proxmox host | IP | vCPU | RAM | OS disk |
 |---|---|---|---|---|---|---|
-| kellerio-cp1 | controlplane (manager-only) | cloud64 | 192.168.2.81 | 2 | 8 GiB | 40 GB |
-| kellerio-cp2 | controlplane (manager-only) | cloud65 | 192.168.2.82 | 2 | 8 GiB | 40 GB |
-| kellerio-cp3 | controlplane (manager-only) | cloud62 | 192.168.2.83 | 2 | 8 GiB | 40 GB |
-| kellerio-wrk1 | worker (defaults) | cloud61 | 192.168.2.84 | 4 | 16 GiB | 40 GB |
-| kellerio-wrk2 | worker (defaults) | cloud64 | 192.168.2.85 | 4 | 16 GiB | 40 GB |
-| kellerio-wrk3 | worker (defaults) | cloud65 | 192.168.2.86 | 4 | 16 GiB | 40 GB |
+| kellerio-cp1 | controlplane (manager-only) | cloud58 | 192.168.2.81 | 2 | 2 GiB | 20 GB |
+| kellerio-cp2 | controlplane (manager-only) | cloud59 | 192.168.2.82 | 2 | 2 GiB | 20 GB |
+| kellerio-cp3 | controlplane (manager-only) | cloud65 | 192.168.2.83 | 2 | 2 GiB | 20 GB |
+| kellerio-wrk1 | worker (defaults) | cloud67 | 192.168.2.84 | 4 | 8 GiB | 40 GB |
+| kellerio-wrk2 | worker (defaults) | cloud61 | 192.168.2.85 | 4 | 8 GiB | 40 GB |
+| kellerio-wrk3 | worker (defaults) | cloud62 | 192.168.2.86 | 4 | 8 GiB | 40 GB |
 
 Workers inherit the `default_*` variables; control planes override them with a
 smaller footprint and `allow_scheduling = false` (no workloads). No node carries a
@@ -44,8 +44,8 @@ sit on three distinct hosts for HA.
 
 > **Before you apply**, double-check the `TODO`s in `cluster.auto.tfvars`:
 > `proxmox_endpoint`, `vm_storage_id` and `iso_storage_id`. `iso_storage_id` must
-> be **shared** storage reachable from every cloud6x host, because the Talos ISO
-> is downloaded once and booted by VMs on all four hosts.
+> be **shared** storage reachable from every Proxmox host, because the Talos ISO
+> is downloaded once and booted by VMs across all target hosts.
 
 ## Prerequisites
 
