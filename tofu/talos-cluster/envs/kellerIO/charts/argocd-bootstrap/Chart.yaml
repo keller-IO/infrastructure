@@ -1,0 +1,6 @@
+apiVersion: v2
+name: argocd-bootstrap
+description: Bootstrap Argo CD root application after Argo CD CRDs are installed.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

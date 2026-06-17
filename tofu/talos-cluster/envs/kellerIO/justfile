@@ -36,5 +36,5 @@ secrets-encrypt:
     #!/usr/bin/env bash
     set -euo pipefail
     test -f secrets.yaml || { echo "Copy secrets.enc.yaml.example to secrets.yaml and fill in values"; exit 1; }
-    sops -e secrets.yaml > secrets.enc.yaml
+    sops --filename-override secrets.enc.yaml -e secrets.yaml > secrets.enc.yaml
     echo "Created secrets.enc.yaml — remove secrets.yaml if you no longer need the plaintext copy."

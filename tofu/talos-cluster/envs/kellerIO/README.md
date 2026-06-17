@@ -55,6 +55,49 @@ sit on three distinct hosts for HA.
 - A Proxmox API token on the kellerIO cluster
 - A Forgejo token with read access to the `keller.io` GitOps repo (for Argo CD)
 
+### Proxmox token permissions
+
+The `nodes` module downloads the Talos ISO with `proxmox_download_file`, which
+uses Proxmox VE's `download-url` API. In addition to the VM privileges needed for
+creating machines, that API requires `Sys.Audit`, `Sys.Modify`, and
+`Datastore.AllocateTemplate`.
+
+Grant those privileges to the API token on the ISO download node and ISO storage.
+The module currently picks the target host of the lowest node name as the ISO
+download node; with the current `cluster.auto.tfvars`, that is `kellerio-cp1` on
+`cloud62`.
+
+```bash
+pveum role add KellerIOTalosIsoDownload \
+  -privs "Sys.Audit Sys.Modify Datastore.AllocateTemplate"
+
+pveum aclmod /nodes/cloud62 \
+  -token 'root@pam!TOKEN_ID' \
+  -role KellerIOTalosIsoDownload
+
+pveum aclmod /storage/cephfs \
+  -token 'root@pam!TOKEN_ID' \
+  -role KellerIOTalosIsoDownload
+```
+
+If the role already exists, use `pveum role modify` with the same `-privs`
+argument. If API-token privilege separation is disabled, equivalent permissions
+on the owning user are sufficient; with privilege separation enabled, the token
+itself needs the ACLs.
+
+If a first apply already downloaded the ISO but failed before OpenTofu recorded
+the resource in state, the next apply fails with `refusing to override existing
+file`. The `proxmox_download_file` resource cannot be imported, so remove the
+unmanaged ISO and let OpenTofu create it again:
+
+```bash
+pvesm free cephfs:iso/talos-v1.13.4-nocloud-amd64.iso
+```
+
+Run that on a Proxmox node with access to the shared storage, or remove the file
+from the Proxmox UI under `cephfs` ISO images. After that, run `tofu apply`
+again.
+
 ## Secrets & SOPS
 
 Secrets are **never committed in plaintext**. They are encrypted with SOPS/age and
@@ -99,8 +142,8 @@ rm secrets.yaml                            # drop the plaintext copy
 ## GitOps with Argo CD
 
 `argocd.tf` installs Argo CD (Helm chart `argo-cd`, pinned via
-`argocd_chart_version`) and bootstraps a single **app-of-apps** Application named
-`bootstrap`, pointing at:
+`argocd_chart_version`) and then installs a small local bootstrap chart that
+creates a single **app-of-apps** Application named `bootstrap`, pointing at:
 
 - repo: `argocd_repo_url` (default `https://git.f4mily.net/kreativmonkey/keller.io.git`)
 - revision: `main`

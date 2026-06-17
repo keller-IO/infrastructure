@@ -99,39 +99,44 @@ resource "helm_release" "argocd" {
       ]
     }
 
-    # Root app-of-apps. Delivered via the chart's extraObjects so the Application CR
-    # is applied by Helm *after* the Argo CD CRDs in the same release — this avoids
-    # any Terraform plan-time dependency on CRDs that don't exist yet.
-    extraObjects = [
-      {
-        apiVersion = "argoproj.io/v1alpha1"
-        kind       = "Application"
-        metadata = {
-          name      = "bootstrap"
-          namespace = kubernetes_namespace_v1.argocd.metadata[0].name
-        }
-        spec = {
-          project = "default"
-          source = {
-            repoURL        = var.argocd_repo_url
-            targetRevision = "main"
-            path           = var.argocd_bootstrap_path
-          }
-          destination = {
-            server    = "https://kubernetes.default.svc"
-            namespace = "argocd"
-          }
-          syncPolicy = {
-            automated   = { prune = true, selfHeal = true }
-            syncOptions = ["CreateNamespace=true"]
-          }
-        }
-      }
-    ]
   })]
 
   depends_on = [
     kubernetes_secret_v1.argocd_repo,
     kubernetes_secret_v1.argocd_sops_age,
   ]
+}
+
+# Root app-of-apps. This is a separate release because Helm validates all objects
+# in a release before installing CRDs from that same release.
+resource "helm_release" "argocd_bootstrap" {
+  name      = "argocd-bootstrap"
+  namespace = kubernetes_namespace_v1.argocd.metadata[0].name
+  chart     = "${path.module}/charts/argocd-bootstrap"
+
+  values = [yamlencode({
+    application = {
+      name      = "bootstrap"
+      namespace = kubernetes_namespace_v1.argocd.metadata[0].name
+      project   = "default"
+      source = {
+        repoURL        = var.argocd_repo_url
+        targetRevision = "main"
+        path           = var.argocd_bootstrap_path
+      }
+      destination = {
+        server    = "https://kubernetes.default.svc"
+        namespace = "argocd"
+      }
+      syncPolicy = {
+        automated = {
+          prune    = true
+          selfHeal = true
+        }
+        syncOptions = ["CreateNamespace=true"]
+      }
+    }
+  })]
+
+  depends_on = [helm_release.argocd]
 }
