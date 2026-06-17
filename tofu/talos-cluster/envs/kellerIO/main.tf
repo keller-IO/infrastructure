@@ -25,7 +25,7 @@ module "nodes" {
 
 # Platform-agnostic Talos cluster configuration applied to those VMs.
 module "cluster" {
-  source = "git::https://github.com/kreativmonkey/terraform-module.git//talos-cluster?ref=v0.1.0"
+  source = "git::https://github.com/kreativmonkey/terraform-module.git//talos-cluster?ref=v0.1.1"
 
   cluster_name        = var.cluster_name
   cluster_endpoint_ip = var.cluster_endpoint_ip

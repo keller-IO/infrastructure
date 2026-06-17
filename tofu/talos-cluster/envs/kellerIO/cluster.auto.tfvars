@@ -19,8 +19,8 @@ default_longhorn_disk_gb = 0
 # TODO: set storage IDs that exist on the kellerIO Proxmox cluster.
 # iso_storage_id must be SHARED storage reachable from every Proxmox host
 # (the ISO is downloaded once and booted by VMs across all target hosts).
-vm_storage_id  = "local-lvm"
-iso_storage_id = "NFS-Storage"
+vm_storage_id  = "local-zfs"
+iso_storage_id = "cephfs"
 
 # Roles:
 #   role = "controlplane" + allow_scheduling = false -> manager only (dedicated)
@@ -32,7 +32,7 @@ nodes = [
   # --- Control plane (manager-only, smaller footprint) ---
   {
     name             = "kellerio-cp1"
-    target_pve       = "cloud58"
+    target_pve       = "cloud62"
     ip_address       = "192.168.2.81"
     role             = "controlplane"
     allow_scheduling = false
@@ -42,7 +42,7 @@ nodes = [
   },
   {
     name             = "kellerio-cp2"
-    target_pve       = "cloud59"
+    target_pve       = "cloud61"
     ip_address       = "192.168.2.82"
     role             = "controlplane"
     allow_scheduling = false
@@ -70,30 +70,30 @@ nodes = [
   },
   {
     name       = "kellerio-wrk2"
-    target_pve = "cloud61"
+    target_pve = "cloud58"
     ip_address = "192.168.2.85"
     role       = "worker"
   },
   {
     name       = "kellerio-wrk3"
-    target_pve = "cloud62"
+    target_pve = "cloud59"
     ip_address = "192.168.2.86"
     role       = "worker"
   },
 ]
 
-# Talos image (guest_agent, iscsi_tools, nfs_tools) — same schematic as homelab-kube.
-talos_schematic_id = "10f9392d7091b30abf573524649756e5bc894f653af525836e9ab0297f301fc2"
+# Talos image (guest_agent nfs_tools) — same schematic as homelab-kube.
+talos_schematic_id = "3abf06e1d81e509d779dc256f9feae6cd6d82c69337c661cbfc383a92594faf5"
 # renovate: datasource=github-releases depName=siderolabs/talos versioning=semver
 talos_version  = "v1.13.4"
 image_platform = "nocloud"
 image_arch     = "amd64"
 
-network_gateway      = "192.168.2.1"
+network_gateway      = "192.168.2.94"
 network_subnet       = 24
 kubelet_valid_subnet = "192.168.2.0/24"
 
 # GitOps: Argo CD reconciles the keller.io repo (root app-of-apps under bootstrap/).
-argocd_repo_url       = "https://git.f4mily.net/kreativmonkey/keller.io.git"
+argocd_repo_url       = "https://github.com/keller-IO/kubernetes-gitops.git"
 argocd_bootstrap_path = "bootstrap"
-git_username          = "kreativmonkey"
+git_username          = "ltsavar"

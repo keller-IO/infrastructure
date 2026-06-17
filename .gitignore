@@ -53,3 +53,4 @@ result-*
 # --- OS ---
 .DS_Store
 Thumbs.db
+tofu/talos-cluster/envs/kellerIO/secrets.enc.yaml

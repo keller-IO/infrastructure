@@ -2,4 +2,4 @@
 creation_rules:
   - path_regex: secrets\.enc\.yaml$
     encrypted_regex: '^(proxmox_api_token|git_token|sops_age_private_key)$'
-    age: REPLACE_WITH_YOUR_AGE_PUBLIC_KEY
+    age: age17x04ga87qyu9lzcuja9k83z90veew9cez7jusul4y5xyr09xaejs9rq755
