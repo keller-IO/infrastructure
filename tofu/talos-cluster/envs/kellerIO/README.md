@@ -164,8 +164,9 @@ decrypted **inside** the repo-server:
 
 - the `sops_age_private_key` is stored in the `argocd-sops-age` secret and mounted
   at `/home/argocd/.config/sops/age/keys.txt` (`SOPS_AGE_KEY_FILE`);
-- an init container (`ksops_image`, default `viaductoss/ksops:v4.5.1`) drops the
-  `ksops` + `kustomize` binaries into the repo-server;
+- an init container (`ksops_image`, default `viaductoss/ksops:v4.5.1`) runs
+  `ksops install --with-kustomize` to add the `ksops` + `kustomize` binaries to
+  the repo-server;
 - `kustomize.buildOptions: --enable-alpha-plugins --enable-exec` lets Argo CD run
   the plugin.
 

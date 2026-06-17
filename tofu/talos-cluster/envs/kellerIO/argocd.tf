@@ -55,6 +55,7 @@ resource "helm_release" "argocd" {
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-cd"
   version    = var.argocd_chart_version
+  timeout    = 600
 
   values = [yamlencode({
     # Let Argo CD's kustomize run the KSOPS exec plugin.
@@ -76,8 +77,7 @@ resource "helm_release" "argocd" {
         {
           name    = "install-ksops"
           image   = var.ksops_image
-          command = ["/bin/sh", "-c"]
-          args    = ["echo 'Installing KSOPS...'; mv ksops /custom-tools/; mv $GOPATH/bin/kustomize /custom-tools/; echo 'Done.'"]
+          command = ["/usr/local/bin/ksops", "install", "--with-kustomize", "/custom-tools"]
           volumeMounts = [
             { mountPath = "/custom-tools", name = "custom-tools" }
           ]
@@ -105,6 +105,8 @@ resource "helm_release" "argocd" {
     kubernetes_secret_v1.argocd_repo,
     kubernetes_secret_v1.argocd_sops_age,
   ]
+
+  upgrade_install = true
 }
 
 # Root app-of-apps. This is a separate release because Helm validates all objects
