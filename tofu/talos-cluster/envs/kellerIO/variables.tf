@@ -37,7 +37,7 @@ variable "git_username" {
 variable "argocd_repo_url" {
   description = "Git URL of the GitOps repo Argo CD reconciles."
   type        = string
-  default     = "https://git.f4mily.net/kreativmonkey/keller.io.git"
+  default     = "https://github.com/keller-IO/kubernetes-gitops.git"
 }
 
 variable "argocd_bootstrap_path" {
