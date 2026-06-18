@@ -95,5 +95,5 @@ kubelet_valid_subnet = "192.168.2.0/24"
 
 # GitOps: Argo CD reconciles the keller.io repo (root app-of-apps under bootstrap/).
 argocd_repo_url       = "https://github.com/keller-IO/kubernetes-gitops.git"
-argocd_bootstrap_path = "bootstrap"
+argocd_bootstrap_path = "cluster/main"
 git_username          = "ltsavar"
