@@ -58,10 +58,12 @@ resource "helm_release" "argocd" {
   timeout    = 600
 
   values = [yamlencode({
-    # Let Argo CD's kustomize run the KSOPS exec plugin.
+    # Let Argo CD's kustomize inflate Helm charts AND run the KSOPS exec plugin.
+    # --enable-helm is required because the GitOps repo renders charts via kustomize
+    # helmCharts. Keep in sync with infrastructure/base/argocd/values.yaml.
     configs = {
       cm = {
-        "kustomize.buildOptions" = "--enable-alpha-plugins --enable-exec"
+        "kustomize.buildOptions" = "--enable-helm --enable-alpha-plugins --enable-exec"
       }
     }
 
@@ -107,6 +109,15 @@ resource "helm_release" "argocd" {
   ]
 
   upgrade_install = true
+
+  # Terraform installs Argo CD once (bootstrap). Day-2 configuration is owned by the
+  # GitOps repo (infrastructure/base/argocd, self-managed via the infra-argocd app),
+  # so ignore values drift here — otherwise Terraform and Argo CD fight over the release.
+  # The values above only need to be good enough for a cold bootstrap (ksops + --enable-helm
+  # so the very first sync can inflate charts and decrypt secrets).
+  lifecycle {
+    ignore_changes = [values]
+  }
 }
 
 # Root app-of-apps. This is a separate release because Helm validates all objects
