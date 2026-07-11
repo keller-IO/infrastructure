@@ -37,7 +37,7 @@ nodes = [
     role             = "controlplane"
     allow_scheduling = false
     cpu_cores        = 2
-    memory_mb        = 2048
+    memory_mb        = 4096
     disk_gb          = 20
   },
   {
@@ -47,7 +47,7 @@ nodes = [
     role             = "controlplane"
     allow_scheduling = false
     cpu_cores        = 2
-    memory_mb        = 2048
+    memory_mb        = 4096
     disk_gb          = 20
   },
   {
@@ -57,7 +57,7 @@ nodes = [
     role             = "controlplane"
     allow_scheduling = false
     cpu_cores        = 2
-    memory_mb        = 2048
+    memory_mb        = 4096
     disk_gb          = 20
   },
 
