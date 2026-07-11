@@ -76,9 +76,10 @@ nodes = [
   },
   {
     name       = "kellerio-wrk3"
-    target_pve = "cloud59"
+    target_pve = "pve2"
     ip_address = "192.168.2.86"
     role       = "worker"
+    cpu_type   = "qemu64"
   },
 ]
 
