@@ -76,10 +76,9 @@ nodes = [
   },
   {
     name       = "kellerio-wrk3"
-    target_pve = "pve2"
+    target_pve = "cloud64"
     ip_address = "192.168.2.86"
     role       = "worker"
-    cpu_type   = "qemu64"
   },
 ]
 
@@ -98,3 +97,21 @@ kubelet_valid_subnet = "192.168.2.0/24"
 argocd_repo_url       = "https://github.com/keller-IO/kubernetes-gitops.git"
 argocd_bootstrap_path = "clusters/main"
 git_username          = "ltsavar"
+
+# Cilium übernimmt CNI + kube-proxy-Ersatz (kubeProxyReplacement). Talos-Defaults
+# kube-proxy + flannel deaktivieren, damit sie nicht parallel zu Cilium laufen
+# (14.07.: liefen als Altlast mit, flannel-conflist war eh von Cilium deaktiviert).
+extra_config_patches = [
+  {
+    cluster = {
+      network = {
+        cni = {
+          name = "none"
+        }
+      }
+      proxy = {
+        disabled = true
+      }
+    }
+  }
+]
