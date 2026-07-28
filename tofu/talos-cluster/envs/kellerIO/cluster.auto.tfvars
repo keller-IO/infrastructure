@@ -80,6 +80,12 @@ nodes = [
     ip_address = "192.168.2.86"
     role       = "worker"
   },
+  {
+    name       = "kellerio-wrk4"
+    target_pve = "cloud59"
+    ip_address = "192.168.2.87"
+    role       = "worker"
+  },
 ]
 
 # Talos image (guest_agent nfs_tools) — same schematic as homelab-kube.
@@ -111,6 +117,27 @@ extra_config_patches = [
       }
       proxy = {
         disabled = true
+      }
+    }
+    # DNS explizit setzen statt per DHCP beziehen. Ohne das nimmt Talos den
+    # Resolver, den der jeweilige Proxmox-Host liefert — auf cloud58/61/62/64/65/67
+    # ist das der Gateway 192.168.2.94, auf cloud59 kam dagegen 100.88.112.65
+    # (CGNAT, ueber das NetBird-Mesh). kellerio-wrk4 haette als einziger Node seine
+    # Namensaufloesung ueber das Mesh bezogen: faellt NetBird aus, verliert der
+    # Node DNS. Funktional war beides gleichwertig (intern wie extern identisch
+    # aufgeloest) — es geht um die Abhaengigkeit, nicht um einen akuten Defekt.
+    #
+    # Gilt fuer ALLE Nodes: das Modul haengt extra_config_patches an jede
+    # Machine-Config an (talos-cluster/machine.tf:94 und :160), einen Per-Node-Hook
+    # gibt es nicht.
+    #
+    # Bewusst im SELBEN Listenelement wie der cluster-Patch: extra_config_patches
+    # ist als list(any) deklariert, und OpenTofu verlangt dann fuer alle Elemente
+    # denselben Typ. Ein zweites Element mit nur einem machine-Key scheitert an
+    # "all list elements must have the same type".
+    machine = {
+      network = {
+        nameservers = ["192.168.2.10"]
       }
     }
   }
