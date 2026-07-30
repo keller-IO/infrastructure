@@ -1,7 +1,7 @@
 # kellerIO — Talos cluster environment
 
 OpenTofu environment that provisions and bootstraps the **kellerIO** Kubernetes
-cluster: 3 dedicated control planes + 3 workers running [Talos
+cluster: 3 dedicated control planes + 4 workers running [Talos
 Linux](https://www.talos.dev/) on a Proxmox cluster. Persistent storage comes from
 an **external Ceph cluster** (via ceph-csi, deployed through GitOps — no local
 Longhorn disks). [Argo CD](https://argo-cd.readthedocs.io/) is installed and points
@@ -10,14 +10,13 @@ reconcile everything else.
 
 ## Used modules
 
-Both modules are consumed from the external repository
-[`kreativmonkey/terraform-module`](https://github.com/kreativmonkey/terraform-module),
-pinned to a tag:
+Both modules are consumed from external repositories and pinned to immutable
+revisions:
 
 | Module | Source | Purpose |
 |---|---|---|
-| `nodes` | `git::https://github.com/kreativmonkey/terraform-module.git//talos-proxmox-nodes?ref=v0.1.0` | Creates the Proxmox VMs and downloads the Talos ISO. |
-| `cluster` | `git::https://github.com/kreativmonkey/terraform-module.git//talos-cluster?ref=v0.1.0` | Configures Talos on those VMs and bootstraps Kubernetes. |
+| `nodes` | `git::https://github.com/keller-IO/terraform-module.git//talos-proxmox-nodes?ref=4b2931c27284f52dcf8acc1453c52126b953fc05` | Creates the Proxmox VMs and downloads the Talos ISO. |
+| `cluster` | `git::https://github.com/kreativmonkey/terraform-module.git//talos-cluster?ref=v0.1.1` | Configures Talos on those VMs and bootstraps Kubernetes. |
 
 Argo CD install + bootstrap (`argocd.tf`) lives in this environment, not in the
 modules, so the modules stay GitOps-agnostic.
@@ -29,23 +28,24 @@ control-plane VIP / Kubernetes API endpoint is `192.168.2.80`.
 
 | Node | Role | Proxmox host | IP | vCPU | RAM | OS disk |
 |---|---|---|---|---|---|---|
-| kellerio-cp1 | controlplane (manager-only) | cloud58 | 192.168.2.81 | 2 | 2 GiB | 20 GB |
-| kellerio-cp2 | controlplane (manager-only) | cloud59 | 192.168.2.82 | 2 | 2 GiB | 20 GB |
-| kellerio-cp3 | controlplane (manager-only) | cloud65 | 192.168.2.83 | 2 | 2 GiB | 20 GB |
+| kellerio-cp1 | controlplane (manager-only) | cloud62 | 192.168.2.81 | 2 | 4 GiB | 20 GB |
+| kellerio-cp2 | controlplane (manager-only) | cloud61 | 192.168.2.82 | 2 | 4 GiB | 20 GB |
+| kellerio-cp3 | controlplane (manager-only) | cloud65 | 192.168.2.83 | 2 | 4 GiB | 20 GB |
 | kellerio-wrk1 | worker (defaults) | cloud67 | 192.168.2.84 | 4 | 8 GiB | 40 GB |
-| kellerio-wrk2 | worker (defaults) | cloud61 | 192.168.2.85 | 4 | 8 GiB | 40 GB |
-| kellerio-wrk3 | worker (defaults) | cloud62 | 192.168.2.86 | 4 | 8 GiB | 40 GB |
+| kellerio-wrk2 | worker (defaults) | cloud58 | 192.168.2.85 | 4 | 8 GiB | 40 GB |
+| kellerio-wrk3 | worker (defaults) | cloud64 | 192.168.2.86 | 4 | 8 GiB | 40 GB |
+| kellerio-wrk4 | worker (defaults) | cloud59 | 192.168.2.87 | 4 | 8 GiB | 40 GB |
 
 Workers inherit the `default_*` variables; control planes override them with a
 smaller footprint and `allow_scheduling = false` (no workloads). No node carries a
 local data disk — storage is provided by the **external Ceph cluster**. The VMs are
-spread across all four Proxmox hosts (cloud61/62/64/65); the three control planes
-sit on three distinct hosts for HA.
+spread across seven Proxmox hosts; the three control planes sit on three distinct
+hosts for HA.
 
-> **Before you apply**, double-check the `TODO`s in `cluster.auto.tfvars`:
-> `proxmox_endpoint`, `vm_storage_id` and `iso_storage_id`. `iso_storage_id` must
-> be **shared** storage reachable from every Proxmox host, because the Talos ISO
-> is downloaded once and booted by VMs across all target hosts.
+The module still downloads the installer to shared `iso_storage_id`, but installed
+VMs set `attach_install_iso = false` so their boot no longer depends on CephFS.
+Set a new node's optional `attach_install_iso = true` only for its initial Talos
+installation, then remove the override after Talos is installed on `scsi0`.
 
 ## Prerequisites
 

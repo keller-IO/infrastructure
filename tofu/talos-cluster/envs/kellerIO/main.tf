@@ -1,8 +1,12 @@
 # Proxmox VMs that back the Talos nodes.
 module "nodes" {
-  source = "git::https://github.com/kreativmonkey/terraform-module.git//talos-proxmox-nodes?ref=v0.1.1"
+  source = "git::https://github.com/keller-IO/terraform-module.git//talos-proxmox-nodes?ref=4b2931c27284f52dcf8acc1453c52126b953fc05"
 
   nodes = var.nodes
+
+  # Talos is installed on scsi0. Detaching the installer prevents VM autostart
+  # from depending on the shared CephFS ISO datastore.
+  attach_install_iso = false
 
   talos_version      = var.talos_version
   talos_schematic_id = var.talos_schematic_id

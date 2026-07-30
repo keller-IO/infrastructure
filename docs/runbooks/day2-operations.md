@@ -50,6 +50,7 @@ tofu -chdir=tofu/talos-cluster/envs/kellerIO output    # control_plane_nodes / w
      target_pve = "cloud59"
      ip_address = "192.168.2.87"
      role       = "worker"
+     attach_install_iso = true
    },
    ```
 2. Ausrollen + warten bis Ready:
@@ -58,6 +59,12 @@ tofu -chdir=tofu/talos-cluster/envs/kellerIO output    # control_plane_nodes / w
    kubectl get node kellerio-wrk4 -w
    ```
 3. README-Tabelle in `$ENV/README.md` nachziehen.
+4. Sobald Talos auf `scsi0` installiert und der Node `Ready` ist,
+   `attach_install_iso` aus dem Node-Eintrag entfernen und erneut planen/anwenden.
+   Der Normalzustand ist `ide3` abwesend und `boot: order=scsi0;net0`; so hängt
+   der VM-Autostart nicht von CephFS ab. Proxmox kann ein IDE-CD-ROM bei laufender
+   VM nicht hot-unpluggen und hält die Entfernung gegebenenfalls bis zum nächsten
+   regulären VM-Start als Pending-Konfiguration vor.
 
 > Control-Plane erweitern: gleiche Logik mit `role = "controlplane"`,
 > `allow_scheduling = false` und CP-Ressourcen (2 vCPU / 2 GiB / 20 GB). Immer
