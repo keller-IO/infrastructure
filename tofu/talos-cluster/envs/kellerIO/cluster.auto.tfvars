@@ -56,7 +56,7 @@ nodes = [
     disk_gb          = 20
   },
   {
-    name             = "kellerio-cp3"
+    name = "kellerio-cp3"
     # cloud65 ist mit 15,6 GB der kleinste Host dieser drei: mit 6 GB fuer cp3
     # sind dort 12,9 von 15,6 GB vergeben (83 %) — im Blick behalten.
     target_pve       = "cloud65"
@@ -70,8 +70,12 @@ nodes = [
 
   # --- Workers (use the default_* resources) ---
   {
-    name       = "kellerio-wrk1"
-    target_pve = "cloud67"
+    name = "kellerio-wrk1"
+    # 24.08.2026: war "cloud67", die VM (2046) liegt real auf `pve`. Verifiziert
+    # per `pvesh get /cluster/resources` und durch den Tofu-Refresh. Solange hier
+    # cloud67 stand, wollte JEDER plan die VM zerstoeren und neu bauen
+    # (node_name forces replacement) — deshalb angeglichen statt zurueckmigriert.
+    target_pve = "pve"
     ip_address = "192.168.2.84"
     role       = "worker"
   },
@@ -88,8 +92,13 @@ nodes = [
     role       = "worker"
   },
   {
-    name       = "kellerio-wrk4"
-    target_pve = "cloud59"
+    name = "kellerio-wrk4"
+    # 24.08.2026: war "cloud59", die VM (2014) liegt real auf `cloud62` — gleiche
+    # Lage wie bei wrk1, gleiche Begruendung. Achtung: wrk4s Disk liegt zudem auf
+    # Ceph (`vmimages`), waehrend `vm_storage_id` global `local-zfs` ist. Das
+    # Node-Schema kennt kein Storage-Feld pro Node, diese Abweichung ist hier
+    # also NICHT abbildbar — sie erzwingt aber auch keine Ersetzung.
+    target_pve = "cloud62"
     ip_address = "192.168.2.87"
     role       = "worker"
   },
