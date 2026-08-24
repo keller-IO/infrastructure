@@ -72,12 +72,18 @@ resource "helm_release" "argocd" {
           value = "/home/argocd/.config/sops/age/keys.txt"
         }
       ]
-      # Install KSOPS + a matching kustomize into a shared volume.
+      # Install ONLY KSOPS into a shared volume — NOT its bundled kustomize
+      # (kellerIO issue #111: that kustomize was v5.3.0, which probes helm with
+      # the removed `helm version -c` flag and breaks every helmCharts-app
+      # against Argo CD's Helm 4). Argo CD's own kustomize already runs the
+      # KSOPS exec plugin fine. Keep in sync with values.yaml in the GitOps repo
+      # (infrastructure/base/argocd/values.yaml) — that's what Argo CD
+      # reconciles itself against once rendering works again.
       initContainers = [
         {
           name    = "install-ksops"
           image   = var.ksops_image
-          command = ["/usr/local/bin/ksops", "install", "--with-kustomize", "/custom-tools"]
+          command = ["/usr/local/bin/ksops", "install", "/custom-tools"]
           volumeMounts = [
             { mountPath = "/custom-tools", name = "custom-tools" }
           ]
@@ -93,7 +99,6 @@ resource "helm_release" "argocd" {
         }
       ]
       volumeMounts = [
-        { mountPath = "/usr/local/bin/kustomize", name = "custom-tools", subPath = "kustomize" },
         { mountPath = "/usr/local/bin/ksops", name = "custom-tools", subPath = "ksops" },
         { mountPath = "/home/argocd/.config/sops/age/keys.txt", name = "sops-age", subPath = "keys.txt" },
       ]
