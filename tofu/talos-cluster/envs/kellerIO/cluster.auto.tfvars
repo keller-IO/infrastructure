@@ -134,6 +134,16 @@ nodes = [
     ip_address = "192.168.2.88"
     memory_mb  = 12288
     role       = "worker"
+    # main.tf setzt modulweit `attach_install_iso = false` - richtig fuer die
+    # bestehenden Nodes, deren Talos auf scsi0 liegt, aber toedlich fuer eine
+    # NEUE Node: die bekam eine leere 40-GB-Platte, `boot: order=scsi0;net0`
+    # und nichts zum Booten - Ergebnis war eine Boot-Schleife, und der
+    # anschliessende `talos_machine_configuration_apply` hing, weil die Node
+    # nie antwortete. Pro Node ueberschreibbar, deshalb hier true.
+    # NACH der Installation auf true verzichten und einmal anwenden, damit die
+    # VM beim Autostart nicht am CephFS-ISO-Storage haengt (Grund fuer den
+    # modulweiten Default).
+    attach_install_iso = true
   },
 ]
 
