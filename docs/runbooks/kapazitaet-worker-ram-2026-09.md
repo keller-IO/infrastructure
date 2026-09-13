@@ -77,14 +77,31 @@ das auf das physische Laufwerk des Hosts zeigt. Die Bootreihenfolge war da schon
 korrekt. Abhilfe: `qm set <VMID> --delete ide3`, danach meldet `plan` **No
 changes**.
 
-### ⚠️ Noch offen
+### ✅ DHCP-Pool um den Node-Block herumgefuehrt (13.09.2026)
 
-Der Control-Plane-VIP **`192.168.2.80`** hat keine MAC und ist per
-`dhcp-host` nicht schuetzbar. Die acht Node-IPs `.81`–`.88` sind seit dem
-13.09. reserviert (siehe unten), `.80` nicht. Dafuer muesste der Pool um den
-Block herumgefuehrt werden: `dhcp-range=192.168.2.60,192.168.2.79` **plus**
-`dhcp-range=192.168.2.95,192.168.2.170`. Keiner der 10 aktuellen Leases liegt
-im ausgesparten Bereich, der Umbau traefe also niemanden.
+Der Control-Plane-VIP **`192.168.2.80`** hat keine MAC und ist per `dhcp-host`
+nicht schuetzbar — nur Aussparen hilft. Der Pool ist deshalb geteilt:
+
+```
+dhcp-range=set:vmbr0,192.168.2.60,192.168.2.79,255.255.255.0,72h
+dhcp-range=set:vmbr0,192.168.2.95,192.168.2.170,255.255.255.0,72h
+```
+
+Ausgespart sind VIP `.80`, die Nodes `.81`–`.88` und das Gateway `.94`;
+`.89`–`.93` bleiben Reserve fuer weitere Nodes. Die `dhcp-host`-Reservierungen
+bleiben wirksam — dnsmasq bedient feste Zuordnungen auch ausserhalb der
+Bereiche (mehrere lagen ohnehin schon draussen, z. B. `.3`, `.10`, `.23`).
+
+**Dass das keine Theorie war, zeigte wrk5:** die Node fragt **tatsaechlich DHCP**
+und haelt `.88` ueber ihre Reservierung (`bc:24:11:e4:14:3b`). Ohne sie haette
+sie eine beliebige Adresse aus dem Pool bekommen. wrk1–wrk4 tauchen dagegen
+nicht in den Leases auf, die sind statisch — der Unterschied kommt vom frisch
+geschriebenen nocloud-Image.
+
+**Verifiziert, nicht angenommen:** `nmap --script broadcast-dhcp-discover` von
+cloud61 bekam **`192.168.2.71`** angeboten — aus dem ersten Bereich und
+ausserhalb des Blocks —, dazu Router `.94` und DNS `.143`/`.10`. Kein Rest-Lease
+zurueckgeblieben. Von 11 Leases liegt keiner im ausgesparten Block ausser `.88`.
 
 ### DHCP-Reservierungen (erledigt 13.09.2026)
 
