@@ -28,6 +28,11 @@ iso_storage_id = "cephfs"
 # Control planes are manager-only (allow_scheduling = false). Storage for workloads
 # comes from the external Ceph cluster, so no node carries a local data disk.
 # IPs start at 192.168.2.81; VMs are spread across cloud58/59/65/67/61/62.
+# 07.08.2026: Control planes von 4096 auf 6144 MB. Bei 4 GB (=3,3 GiB allocatable)
+# lagen cp1/cp2/cp3 real bei 78-93 % Speicher — cp1 bei 3052Mi = 93 %. Allein
+# kube-apiserver braucht dort 1,4-1,8 GiB, der Rest geht fuer etcd, kubelet und
+# die Cilium-/CSI-DaemonSets drauf. Damit war die Control Plane der engste Punkt
+# im Cluster, und ein CP-Ausfall wiegt schwerer als ein Worker.
 nodes = [
   # --- Control plane (manager-only, smaller footprint) ---
   {
@@ -37,7 +42,7 @@ nodes = [
     role             = "controlplane"
     allow_scheduling = false
     cpu_cores        = 2
-    memory_mb        = 4096
+    memory_mb        = 6144
     disk_gb          = 20
   },
   {
@@ -47,24 +52,32 @@ nodes = [
     role             = "controlplane"
     allow_scheduling = false
     cpu_cores        = 2
-    memory_mb        = 4096
+    memory_mb        = 6144
     disk_gb          = 20
   },
   {
-    name             = "kellerio-cp3"
+    name = "kellerio-cp3"
+    # cloud65 ist mit 15,6 GB der kleinste Host dieser drei: mit 6 GB fuer cp3
+    # sind dort 12,9 von 15,6 GB vergeben (83 %) — im Blick behalten.
     target_pve       = "cloud65"
     ip_address       = "192.168.2.83"
     role             = "controlplane"
     allow_scheduling = false
     cpu_cores        = 2
-    memory_mb        = 4096
+    memory_mb        = 6144
     disk_gb          = 20
   },
 
   # --- Workers (use the default_* resources) ---
   {
-    name       = "kellerio-wrk1"
-    target_pve = "cloud67"
+    name = "kellerio-wrk1"
+    # 13.09.2026: die VM (2046) liegt real auf `lat7440` — Ingo hat sie dorthin
+    # verschoben. Davor stand hier "pve" (24.08.) und davor "cloud67". Der Wert
+    # MUSS der Realitaet folgen: `node_name` erzwingt Ersetzung, und wrk1 traegt
+    # 5 der 6 CNPG-Primaries — ein falscher Eintrag laesst jeden plan die VM
+    # zerstoeren und neu bauen. Vor jedem Lauf gegen
+    # `pvesh get /cluster/resources` pruefen.
+    target_pve = "lat7440"
     ip_address = "192.168.2.84"
     role       = "worker"
   },
@@ -81,8 +94,13 @@ nodes = [
     role       = "worker"
   },
   {
-    name       = "kellerio-wrk4"
-    target_pve = "cloud59"
+    name = "kellerio-wrk4"
+    # 24.08.2026: war "cloud59", die VM (2014) liegt real auf `cloud62` — gleiche
+    # Lage wie bei wrk1, gleiche Begruendung. Achtung: wrk4s Disk liegt zudem auf
+    # Ceph (`vmimages`), waehrend `vm_storage_id` global `local-zfs` ist. Das
+    # Node-Schema kennt kein Storage-Feld pro Node, diese Abweichung ist hier
+    # also NICHT abbildbar — sie erzwingt aber auch keine Ersetzung.
+    target_pve = "cloud62"
     ip_address = "192.168.2.87"
     role       = "worker"
   },
@@ -135,9 +153,26 @@ extra_config_patches = [
     # ist als list(any) deklariert, und OpenTofu verlangt dann fuer alle Elemente
     # denselben Typ. Ein zweites Element mit nur einem machine-Key scheitert an
     # "all list elements must have the same type".
+    #
+    # 10.08.2026: 9.9.9.9 als ZWEITER Resolver ergaenzt. Mit nur 192.168.2.10 war
+    # dnsmasq auf dem PVE-Host `pve` ein Single Point of Failure fuer die externe
+    # Namensaufloesung des GESAMTEN Clusters. Real eingetreten am 10.08.2026: pve
+    # war ~40 min stromlos (DECT-Dose), und danach kam dnsmasq zwar als "active"
+    # hoch, beantwortete aber keine einzige Anfrage — CoreDNS lieferte SERVFAIL
+    # fuer alle externen Namen, Roundcube fand mail.jit-creatives.de nicht mehr
+    # ("getaddrinfo failed"), Kunden konnten nicht mailen. Siehe pve-dect-failsafe.
+    #
+    # Reihenfolge ist Absicht: .10 zuerst, damit die internen Spezialrouten von
+    # dnsmasq (server=/jit.services/…, /box/…, /spamhaus.org/…) weiter greifen.
+    # 9.9.9.9 ist reiner Fallback fuer den Fall, dass .10 nicht antwortet, und
+    # kennt die internen Namen NICHT — er ersetzt dnsmasq also nicht, er
+    # verhindert nur den Totalausfall. Quad9 statt 8.8.8.8/1.1.1.1 gewaehlt, weil
+    # 1.1.1.1 und 8.8.8.8 hier bereits als Spezial-Upstreams fuer /jit.services
+    # bzw. in cert-manager belegt sind — ein dritter Anbieter haelt die
+    # Fehlerbilder auseinander.
     machine = {
       network = {
-        nameservers = ["192.168.2.10"]
+        nameservers = ["192.168.2.10", "9.9.9.9"]
       }
     }
   }
