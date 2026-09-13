@@ -104,6 +104,32 @@ nodes = [
     ip_address = "192.168.2.87"
     role       = "worker"
   },
+  {
+    name = "kellerio-wrk5"
+    # 13.09.2026 neu. Grund: N-1 ging mit vier Workern nicht auf — 20.503 MiB
+    # Requests gegen 3x7.435 MiB Allocatable sind 92 %, bei einem Ausfall
+    # blieben Pods Pending. Eine fuenfte Node loest das auf 69 %, ohne eine
+    # einzige bestehende Node anzufassen. Die Alternative (alle vier auf 12 GB)
+    # haette vier Reboots gekostet, und die sechs CNPG-Cluster mit
+    # `instances: 1` erlauben per PDB null Unterbrechungen.
+    #
+    # cloud67: am 13.09. auf 32 GB aufgeruestet, traegt sonst keine VM,
+    # 8 Xeon-Kerne im Leerlauf, 183 GB freies local-zfs, Mon+Mgr-Standby.
+    # ACHTUNG: cloud67 haengt an 1 GBit/s, nicht an 10 wie cloud58/61/62 und
+    # lat7440. Das ist bewusst in Kauf genommen — cloud64 (wrk3) haengt
+    # ebenfalls an 1 GBit/s und laeuft unauffaellig. PVCs kommen ueber Ceph
+    # RBD uebers Netz, I/O-schwere Workloads gehoeren also eher nicht hierher.
+    #
+    # 12 GB statt der 8 GB Default: kostet auf dem leeren cloud67 keinen
+    # zusaetzlichen Eingriff und macht wrk5 gross genug, um beim spaeteren
+    # Ausbau eine komplette andere Node aufzunehmen. Damit wird 4x12 GB
+    # nachtraeglich per Drain moeglich, statt wie bisher an den CNPG-PDBs
+    # haengenzubleiben.
+    target_pve = "cloud67"
+    ip_address = "192.168.2.88"
+    memory_mb  = 12288
+    role       = "worker"
+  },
 ]
 
 # Talos image (guest_agent nfs_tools) — same schematic as homelab-kube.
