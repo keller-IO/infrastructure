@@ -1,5 +1,117 @@
 # Plan — media-RAM, Laptop als PVE-Node, Worker-Kapazitaet
 
+
+## ✅ wrk5 laeuft — 13.09.2026
+
+`kellerio-wrk5` ist **Ready**: `cloud67`, VM 2030, `192.168.2.88`, 12 GB
+(11.730.460Ki allocatable), 4 Kerne, 40 GB `local-zfs`. Acht Nodes, alle Ready,
+36/36 Apps gruen, 36/36 Zertifikate Ready, kein auffaelliger Pod.
+`tofu plan` auf beide wrk5-Ressourcen: **No changes**.
+
+**N-1 ist geloest.** Vorher 20.503 MiB Requests gegen 3×7.435 MiB = **92 %**.
+Jetzt 21.651 MiB (wrk5 traegt selbst 1.148 MiB DaemonSets) gegen 29.740 MiB,
+wenn die groesste Node ausfaellt = **73 %**; faellt ein 8-GB-Worker aus, 64 %.
+
+Die L2-Ansage fuer `192.168.2.246` blieb bei **wrk2** (cloud58, 10 GBit) — das
+Hinzufuegen hat den Lease nicht bewegt. **Beachten:** das nginx-DaemonSet ist
+jetzt 8/8, und damit sind **zwei von fuenf Workern an 1 GBit** (wrk3 auf cloud64,
+wrk5 auf cloud67). Wandert der Lease dorthin, laeuft der gesamte Ingress ueber
+1 GBit. Neu ist das nicht — fuer wrk3 galt es immer —, aber die Wahrscheinlichkeit
+ist gestiegen.
+
+### ⚠️ Was nicht nach Plan lief
+
+**1. Die Node bootete im Kreis.** `main.tf:9` setzt modulweit
+`attach_install_iso = false`. Fuer die bestehenden Nodes richtig (Talos liegt auf
+`scsi0`, der Autostart soll nicht am CephFS-ISO-Storage haengen), fuer eine
+**neue** Node toedlich: leere 40-GB-Platte, `boot: order=scsi0;net0`, nichts zum
+Booten. **Der Folgeschaden war schlimmer als die Ursache:** danach lief jeder
+`tofu plan` in „Plugin did not respond", weil der Provider beim Einlesen den
+qemu-guest-agent abfragt — den eine nicht bootende VM nie bedient. Tofu
+blockierte an genau dem Zustand, den es beheben sollte. Pro Node ist
+`attach_install_iso = true` setzbar; nach der Installation wieder entfernen.
+
+**2. Der Installer-Download verhungerte — und die Ursache lag draussen.**
+`factory.talos.dev` loest derzeit auf **`125.253.73.31`** auf, einen Knoten in
+Vietnam. Das ist **keine** lokale DNS-Manipulation: 1.1.1.1, 8.8.8.8, 9.9.9.9,
+dns01 und auch edge01 liefern dieselbe Adresse. Der Unterschied ist der
+Transitweg — **edge01 (Hetzner) laedt mit 16,4 MB/s, unsere Anbindung mit
+rund 5 kB/s zur selben IP**, mit `connection reset by peer`. 103 MiB haetten so
+ueber fuenf Stunden gedauert und wurden vorher abgebrochen.
+
+**Nicht cloud67 und nicht die 1-GBit-Anbindung waren schuld** — cloud58,
+cloud61 und der Laptop waren genauso langsam, waehrend GitHub vom selben
+cloud67 mit 7,9 MB/s lief. Wer hier vorschnell auf den neuen Host zeigt, sucht
+an der falschen Stelle.
+
+**Der Umweg, der funktioniert hat** (fuer den Wiederholungsfall):
+
+```sh
+# 1. Fertiges nocloud-Image mit DEMSELBEN Schematic ueber edge01 holen
+ssh edge01 'curl -sL -o /tmp/talos.raw.xz \
+  https://factory.talos.dev/image/<SCHEMATIC>/v1.13.4/nocloud-amd64.raw.xz'
+# 2. Ins LAN streamen (hier: 217 MB in 24 s), Pruefsummen vergleichen
+ssh cfgmgmt01 "ssh edge01 'cat /tmp/talos.raw.xz' | ssh cloud67 'cat > /var/tmp/talos.raw.xz'"
+# 3. VM anhalten, entpacken, per Proxmox importieren (NICHT roh auf das zvol schreiben)
+qm stop <VMID>; xz -dk -T0 /var/tmp/talos.raw.xz
+qm importdisk <VMID> /var/tmp/talos.raw local-zfs        # -> unused0: vm-<VMID>-disk-1
+# 4. WICHTIG: den ZFS-Namen geradeziehen, damit scsi0 weiter vm-<VMID>-disk-0 heisst.
+#    Sonst zeigt `path_in_datastore` im Tofu-State auf einen anderen Namen und ein
+#    spaeterer Lauf will die Platte womoeglich neu anlegen.
+zfs destroy rpool/data/vm-<VMID>-disk-0
+zfs rename  rpool/data/vm-<VMID>-disk-1 rpool/data/vm-<VMID>-disk-0
+zfs set volsize=40G rpool/data/vm-<VMID>-disk-0
+sed -i '/^unused0: /d' /etc/pve/qemu-server/<VMID>.conf
+# 5. Konfiguration neu anwenden (Talos ist installiert -> kein Installer-Pull mehr)
+tofu apply -replace='module.cluster.talos_machine_configuration_apply.worker["<NAME>"]' \
+  -target=... -target=...
+```
+
+Nach Schritt 5 war die Node in **41 Sekunden** Ready.
+
+**3. Der Provider laesst beim ISO-Abhaengen Muell stehen.** `attach_install_iso`
+entfernen und anwenden endet mit
+`ide3: hotplug problem ... The 'host_cdrom' block driver requires a file name`:
+bpg loescht das Laufwerk nicht, sondern setzt es auf ein leeres `ide3: cdrom`,
+das auf das physische Laufwerk des Hosts zeigt. Die Bootreihenfolge war da schon
+korrekt. Abhilfe: `qm set <VMID> --delete ide3`, danach meldet `plan` **No
+changes**.
+
+### ⚠️ Noch offen
+
+Der Control-Plane-VIP **`192.168.2.80`** hat keine MAC und ist per
+`dhcp-host` nicht schuetzbar. Die acht Node-IPs `.81`–`.88` sind seit dem
+13.09. reserviert (siehe unten), `.80` nicht. Dafuer muesste der Pool um den
+Block herumgefuehrt werden: `dhcp-range=192.168.2.60,192.168.2.79` **plus**
+`dhcp-range=192.168.2.95,192.168.2.170`. Keiner der 10 aktuellen Leases liegt
+im ausgesparten Bereich, der Umbau traefe also niemanden.
+
+### DHCP-Reservierungen (erledigt 13.09.2026)
+
+**Im Netz `192.168.2.0/24` vergibt nicht die UDM, sondern dnsmasq auf
+`192.168.2.10` (= Host `pve`)** — dort `dhcp-range=192.168.2.60,192.168.2.170`,
+was `.80`–`.88` umschliesst. Es gab **keine einzige Reservierung fuer die
+Talos-Nodes** (29 andere existierten). Gekracht hat es nie, weil rund 10 Clients
+auf 110 Adressen treffen.
+
+Ergaenzt ueber cfgmgmt01, Playbook `playbooks/dnsmasq_jit_land.yml`, Rolle
+`jit.dnsmasq`: `dhcp-host` **und** `host-record` je Node (`.81`–`.88`). Das
+`host-record` ist noetig, weil die Talos-Nodes nie einen Lease holen und
+`dhcp-host` allein deshalb keinen DNS-Namen erzeugt — vorher hatten sie gar
+keinen.
+
+Zwei Dinge dabei, die kuenftig Zeit sparen:
+- **cfgmgmt01 erreicht `pve` nicht direkt.** Dessen `INPUT`-Kette endet nach der
+  NetBird-ACL auf `DROP`, `192.168.23.0/24` ist nicht freigegeben (Route da,
+  Port 22 laeuft in den Timeout). Der eingetragene Bastion `192.168.2.1`
+  (cloud59) ist von dort ebenfalls nicht erreichbar. Hinterlegt ist jetzt
+  `ansible_ssh_common_args` mit `ProxyJump` ueber `cloud61` in
+  `host_vars/pve.jit.land.yml` — versioniert, statt in der ungetrackten
+  SSH-Config.
+- **Die Task „Configure dnsmasq" hatte kein `validate:`**, anders als die
+  Forwarding-Task daneben. Eine kaputte Datei waere geschrieben worden und erst
+  der Neustart gescheitert — das LAN dann ohne DNS **und** ohne DHCP. Ergaenzt.
+
 > ## ⚠️ Kurswechsel 13.09.2026 — fuenfter Worker statt 4 × 12 GB
 >
 > **Der Weg „alle vier Worker auf 12 GB" ist verworfen.** Stattdessen kommt ein
