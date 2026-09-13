@@ -2,8 +2,13 @@
 # Secrets: secrets.auto.tfvars (local) or secrets.enc.yaml (SOPS, see secrets.enc.yaml.example).
 
 # Proxmox cluster API endpoint (any node of the kellerIO Proxmox cluster).
-# TODO: set the real endpoint of one of the cloud6x hosts.
-proxmox_endpoint = "https://cloud61:8006"
+# 13.09.2026: FQDN statt Kurzname. `cloud61` allein ist nur mit passender
+# Search-Domain aufloesbar; von einem Arbeitsplatz aus scheitert jeder Lauf mit
+# "lookup cloud61 ... no such host", und der Provider meldet dann irrefuehrend,
+# Ressourcen seien geloescht (z. B. das Talos-ISO auf cephfs, das sehr wohl
+# dort liegt). `cloud61.jit.land` steht als host-record im dnsmasq auf
+# 192.168.2.10 und loest ueberall im LAN auf.
+proxmox_endpoint = "https://cloud61.jit.land:8006"
 
 cluster_name        = "kellerio"
 cluster_endpoint_ip = "192.168.2.80" # control-plane VIP (unused IP just below the node range)
