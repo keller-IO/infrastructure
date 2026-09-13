@@ -71,11 +71,13 @@ nodes = [
   # --- Workers (use the default_* resources) ---
   {
     name = "kellerio-wrk1"
-    # 24.08.2026: war "cloud67", die VM (2046) liegt real auf `pve`. Verifiziert
-    # per `pvesh get /cluster/resources` und durch den Tofu-Refresh. Solange hier
-    # cloud67 stand, wollte JEDER plan die VM zerstoeren und neu bauen
-    # (node_name forces replacement) — deshalb angeglichen statt zurueckmigriert.
-    target_pve = "pve"
+    # 13.09.2026: die VM (2046) liegt real auf `lat7440` — Ingo hat sie dorthin
+    # verschoben. Davor stand hier "pve" (24.08.) und davor "cloud67". Der Wert
+    # MUSS der Realitaet folgen: `node_name` erzwingt Ersetzung, und wrk1 traegt
+    # 5 der 6 CNPG-Primaries — ein falscher Eintrag laesst jeden plan die VM
+    # zerstoeren und neu bauen. Vor jedem Lauf gegen
+    # `pvesh get /cluster/resources` pruefen.
+    target_pve = "lat7440"
     ip_address = "192.168.2.84"
     role       = "worker"
   },
