@@ -134,16 +134,16 @@ nodes = [
     ip_address = "192.168.2.88"
     memory_mb  = 12288
     role       = "worker"
-    # main.tf setzt modulweit `attach_install_iso = false` - richtig fuer die
-    # bestehenden Nodes, deren Talos auf scsi0 liegt, aber toedlich fuer eine
-    # NEUE Node: die bekam eine leere 40-GB-Platte, `boot: order=scsi0;net0`
-    # und nichts zum Booten - Ergebnis war eine Boot-Schleife, und der
-    # anschliessende `talos_machine_configuration_apply` hing, weil die Node
-    # nie antwortete. Pro Node ueberschreibbar, deshalb hier true.
-    # NACH der Installation auf true verzichten und einmal anwenden, damit die
-    # VM beim Autostart nicht am CephFS-ISO-Storage haengt (Grund fuer den
-    # modulweiten Default).
-    attach_install_iso = true
+    # 13.09.2026, fuer die naechste neue Node wichtig: `main.tf` setzt modulweit
+    # `attach_install_iso = false`. Fuer die bestehenden Nodes ist das richtig
+    # (Talos liegt auf scsi0, und der Autostart soll nicht am CephFS-ISO-Storage
+    # haengen), fuer eine NEUE Node aber toedlich - sie bekommt eine leere
+    # Platte, `boot: order=scsi0;net0` und nichts zum Booten. Das sieht wie eine
+    # Boot-Schleife aus; zusaetzlich haengt danach jeder `plan`, weil der
+    # Provider den qemu-guest-agent abfragt, den eine nicht bootende VM nie
+    # bedient. Abhilfe: `attach_install_iso = true` NUR fuer die neue Node
+    # setzen, installieren lassen, danach wieder entfernen.
+    # wrk5 ist installiert, das ISO ist abgehaengt - deshalb steht hier nichts.
   },
 ]
 
