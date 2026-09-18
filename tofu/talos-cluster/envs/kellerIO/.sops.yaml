@@ -1,5 +1,7 @@
-# Replace the age public key with yours: age-keygen -y < ~/.config/sops/age/keys.txt
+# Recipients: age-keygen -y < ~/.config/sops/age/keys.txt
+# Nach dem Ergaenzen/Entfernen eines Empfaengers: sops updatekeys -y secrets.enc.yaml
 creation_rules:
   - path_regex: secrets\.enc\.yaml$
     encrypted_regex: '^(proxmox_api_token|git_token|sops_age_private_key)$'
-    age: age17x04ga87qyu9lzcuja9k83z90veew9cez7jusul4y5xyr09xaejs9rq755
+    age: >-
+      age17x04ga87qyu9lzcuja9k83z90veew9cez7jusul4y5xyr09xaejs9rq755,age1hjq0mgzc2npw9lhtwr49qqrfvkxzc2ss8qu7e06fk5n84qm7xs7qrgxfxa
