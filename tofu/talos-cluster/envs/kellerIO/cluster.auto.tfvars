@@ -106,9 +106,12 @@ nodes = [
     role       = "worker"
   },
   {
-    name       = "kellerio-wrk3"
+    name = "kellerio-wrk3"
+    # 18.10.2026: 8 -> 12 GB, nachdem db11 (VM 2023, 4 GB) per HA-Prioritaet
+    # nach cloud67 umgezogen ist. Vorher swappte cloud64 bereits 2,5 GB.
     target_pve = "cloud64"
     ip_address = "192.168.2.86"
+    memory_mb  = 12288
     role       = "worker"
   },
   {
