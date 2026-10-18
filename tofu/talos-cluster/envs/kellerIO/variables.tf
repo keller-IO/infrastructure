@@ -167,6 +167,7 @@ variable "nodes" {
     memory_mb          = optional(number)
     disk_gb            = optional(number)
     longhorn_disk_gb   = optional(number)
+    storage_id         = optional(string)
     extra_disks = optional(list(object({
       size         = number
       datastore_id = optional(string)
@@ -177,6 +178,12 @@ variable "nodes" {
 
 variable "extra_config_patches" {
   description = "Additional Talos config patches applied to every node."
+  type        = list(any)
+  default     = []
+}
+
+variable "extra_controlplane_config_patches" {
+  description = "Additional Talos config patches applied to control-plane nodes only (settings Talos rejects on workers)."
   type        = list(any)
   default     = []
 }
