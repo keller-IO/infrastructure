@@ -167,6 +167,7 @@ variable "nodes" {
     memory_mb          = optional(number)
     disk_gb            = optional(number)
     longhorn_disk_gb   = optional(number)
+    storage_id         = optional(string)
     extra_disks = optional(list(object({
       size         = number
       datastore_id = optional(string)

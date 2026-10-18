@@ -101,11 +101,16 @@ nodes = [
   {
     name = "kellerio-wrk4"
     # 24.08.2026: war "cloud59", die VM (2014) liegt real auf `cloud62` — gleiche
-    # Lage wie bei wrk1, gleiche Begruendung. Achtung: wrk4s Disk liegt zudem auf
-    # Ceph (`vmimages`), waehrend `vm_storage_id` global `local-zfs` ist. Das
-    # Node-Schema kennt kein Storage-Feld pro Node, diese Abweichung ist hier
-    # also NICHT abbildbar — sie erzwingt aber auch keine Ersetzung.
+    # Lage wie bei wrk1, gleiche Begruendung.
+    #
+    # 18.10.2026: wrk4s Disk und Cloud-Init-Laufwerk liegen auf Ceph (`vmimages`),
+    # nicht auf dem globalen `vm_storage_id` (`local-zfs`). Ohne `storage_id` wollte
+    # jeder plan die Disk der laufenden VM nach cloud62 `local-zfs` verschieben.
+    # Bewusst auf Ceph gelassen: cloud62 `rpool` lag am 18.10. bei 74 % (55,6 G
+    # frei, 79 % Fragmentierung, traegt auch cp1). wrk4 belegt 24 von 40 GiB, und
+    # wegen `discard=ignore` waechst das zvol gegen 40 G — der Pool liefe auf ~92 %.
     target_pve = "cloud62"
+    storage_id = "vmimages"
     ip_address = "192.168.2.87"
     role       = "worker"
   },

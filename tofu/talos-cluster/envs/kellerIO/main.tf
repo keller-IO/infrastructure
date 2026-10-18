@@ -1,6 +1,6 @@
 # Proxmox VMs that back the Talos nodes.
 module "nodes" {
-  source = "git::https://github.com/keller-IO/terraform-module.git//talos-proxmox-nodes?ref=4b2931c27284f52dcf8acc1453c52126b953fc05"
+  source = "git::https://github.com/keller-IO/terraform-module.git//talos-proxmox-nodes?ref=efeacd1dcc3f00bd60e276b95a33c894ab5ce81f"
 
   nodes = var.nodes
 
