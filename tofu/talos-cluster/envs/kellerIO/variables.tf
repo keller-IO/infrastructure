@@ -181,3 +181,9 @@ variable "extra_config_patches" {
   type        = list(any)
   default     = []
 }
+
+variable "extra_controlplane_config_patches" {
+  description = "Additional Talos config patches applied to control-plane nodes only (settings Talos rejects on workers)."
+  type        = list(any)
+  default     = []
+}

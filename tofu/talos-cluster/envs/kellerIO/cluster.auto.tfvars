@@ -239,3 +239,32 @@ extra_config_patches = [
     }
   }
 ]
+
+# 18.10.2026 (kubernetes-gitops#287): Talos-API-Zugang fuer den
+# system-upgrade-controller. Talos erzeugt fuer eine talos.dev-ServiceAccount-CR
+# im erlaubten Namespace selbst ein Secret mit talosconfig (Key `config`):
+# Client-Zertifikat der OS-CA, 6 h gueltig, 1 h vor Ablauf automatisch erneuert.
+# Damit liegt kein langlebiges Admin-Zertifikat in Git, im Tofu-State oder im
+# Cluster. Die CR selbst liegt im GitOps-Repo (system-upgrade-controller).
+#
+# `os:admin` ist noetig: In Talos 1.13 verlangt MachineService/Upgrade genau
+# diese Rolle (internal/app/machined/pkg/system/services/machined.go),
+# `os:operator` reicht nicht. Begrenzt wird ueber den Namespace: nur CRs in
+# `system-upgrade-controller` bekommen ein Zertifikat, und nur dessen Jobs
+# mounten es.
+#
+# Nur Control Planes: Talos lehnt das Feature auf Workern ab ("can only be
+# enabled on control plane machines").
+extra_controlplane_config_patches = [
+  {
+    machine = {
+      features = {
+        kubernetesTalosAPIAccess = {
+          enabled                     = true
+          allowedRoles                = ["os:admin"]
+          allowedKubernetesNamespaces = ["system-upgrade-controller"]
+        }
+      }
+    }
+  }
+]
