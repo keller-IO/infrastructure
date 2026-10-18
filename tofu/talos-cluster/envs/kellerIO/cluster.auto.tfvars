@@ -103,14 +103,14 @@ nodes = [
     # 24.08.2026: war "cloud59", die VM (2014) liegt real auf `cloud62` — gleiche
     # Lage wie bei wrk1, gleiche Begruendung.
     #
-    # 18.10.2026: wrk4s Disk und Cloud-Init-Laufwerk liegen auf Ceph (`vmimages`),
-    # nicht auf dem globalen `vm_storage_id` (`local-zfs`). Ohne `storage_id` wollte
-    # jeder plan die Disk der laufenden VM nach cloud62 `local-zfs` verschieben.
-    # Bewusst auf Ceph gelassen: cloud62 `rpool` lag am 18.10. bei 74 % (55,6 G
-    # frei, 79 % Fragmentierung, traegt auch cp1). wrk4 belegt 24 von 40 GiB, und
-    # wegen `discard=ignore` waechst das zvol gegen 40 G — der Pool liefe auf ~92 %.
+    # 18.10.2026 17:19: wrk4s Systemplatte live von Ceph `vmimages` nach cloud62
+    # `local-zfs` verschoben (qmmove, ohne Downtime), nachdem aios01 (2017) und
+    # office02 (2028) dort Platz gemacht hatten; `rpool` danach 72 %, 60,7 G frei.
+    # Damit gilt wieder der globale `vm_storage_id`, kein `storage_id` noetig.
+    # Rest: das Cloud-Init-Laufwerk liegt noch auf `vmimages`; der plan zeigt dafuer
+    # `initialization.datastore_id vmimages -> local-zfs`. Talos liest nocloud nur
+    # beim Boot, das Umziehen des kleinen Laufwerks ist unkritisch.
     target_pve = "cloud62"
-    storage_id = "vmimages"
     ip_address = "192.168.2.87"
     role       = "worker"
   },
