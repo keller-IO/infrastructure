@@ -107,12 +107,15 @@ nodes = [
     # `local-zfs` verschoben (qmmove, ohne Downtime), nachdem aios01 (2017) und
     # office02 (2028) dort Platz gemacht hatten; `rpool` danach 72 %, 60,7 G frei.
     # Damit gilt wieder der globale `vm_storage_id`, kein `storage_id` noetig.
-    # Rest: das Cloud-Init-Laufwerk liegt noch auf `vmimages`; der plan zeigt dafuer
-    # `initialization.datastore_id vmimages -> local-zfs`. Talos liest nocloud nur
-    # beim Boot, das Umziehen des kleinen Laufwerks ist unkritisch.
-    target_pve = "cloud62"
-    ip_address = "192.168.2.87"
-    role       = "worker"
+    # Das Cloud-Init-Laufwerk liegt weiter auf `vmimages`. NICHT per Tofu
+    # verschieben: bei einem Wechsel von `initialization.datastore_id` schaltet
+    # bpg/proxmox die VM aus (vmPowerOffForPendingChanges). Deshalb pinnt
+    # `cloudinit_storage_id` den Ist-Stand. Verschieben nur in einem geplanten
+    # Wartungsfenster mit gedrainter wrk4, danach die Zeile entfernen.
+    target_pve           = "cloud62"
+    cloudinit_storage_id = "vmimages"
+    ip_address           = "192.168.2.87"
+    role                 = "worker"
   },
   {
     name = "kellerio-wrk5"
