@@ -98,27 +98,58 @@ Reihenfolge wichtig — erst aus K8s/etcd raus, dann VM zerstören.
 
 **Datei:** `cluster.auto.tfvars` (`talos_version`, hat `# renovate:`-Marker).
 
-1. `talos_version` auf Ziel setzen (z.B. `v1.13.4` → `v1.14.x`), damit Code = Ist:
+1. `talos_version` auf Ziel setzen (z.B. `v1.13.4` → `v1.14.4`), damit Code = Ist:
    ```bash
    just plan && just apply
    ```
-2. Nodes nacheinander auf das neue Installer-Image heben (Schematic-ID aus tfvars):
+   Im Plan erwartet: `talos_machine_secrets` nur *update in-place* (der Provider
+   ersetzt nur bei einem **Downgrade** von `talos_version` — steht dort
+   `must be replaced`, sofort abbrechen, das waere eine neue Cluster-PKI),
+   je Node ein Config-Apply, das nur `machine.install.image` aendert, und ein
+   neues ISO auf `cephfs` (an keine VM gehaengt).
+2. Nodes nacheinander auf das neue Installer-Image heben (Schematic-ID aus tfvars).
+   Pfad ist `nocloud-installer` — derselbe wie `machine.install.image` in der
+   Config; seit Talos 1.14 gibt es kein `ghcr.io/siderolabs/installer` mehr.
+   `talosctl` muss mindestens die Zielversion haben.
    ```bash
    talosctl -n 192.168.2.81 upgrade \
-     --image factory.talos.dev/installer/<talos_schematic_id>:v1.14.x
+     --image factory.talos.dev/nocloud-installer/<talos_schematic_id>:v1.14.4
    ```
    Pro Node einzeln, Health abwarten:
    ```bash
    talosctl -n 192.168.2.81 health
    kubectl get nodes
    ```
-   Reihenfolge: Control-Planes (.81→.82→.83) zuerst, dann Worker (.84→.85→.86).
+   Reihenfolge: Control-Planes (.81→.82→.83) zuerst, dann Worker (.84→.88).
 3. Kubernetes-Version separat anheben (Talos steuert das in-cluster):
    ```bash
    talosctl -n 192.168.2.80 upgrade-k8s --to 1.3x.y
    ```
 
 > Immer **ein Node nach dem anderen**. CP-Quorum (mind. 2 von 3) muss erhalten bleiben.
+
+### Config-Contract und Talos-Provider
+
+`talos_version` hebt nur das **installierte OS**. Der Config-Contract (welche
+Dokumente und Defaults die Machine-Config enthaelt) haengt am Talos-Provider,
+weil das Modul `talos-cluster` v0.1.1 ihn nicht setzt. Deshalb ist der Provider in
+`versions.tf` auf `~> 0.11.0` (Contract v1.13) festgenagelt. Nicht per
+`tofu init -upgrade` oder Renovate auf 0.12 heben, ohne gleichzeitig:
+
+1. das Modul auf `talos-cluster` **v0.5.0** zu heben und dort
+   `kubernetes_version` (= laufende Version), `secrets_talos_version = "v1.13.4"`
+   (Wert im State) und `install_disk = "/dev/sda"` zu setzen,
+2. `extra_config_patches` auf Multi-Doc-YAML umzustellen (`list(string)`):
+   `ResolverConfig` statt `machine.network.nameservers`,
+   `KubeFlannelCNIConfig` und `KubeProxyConfig` per `$patch: delete` statt
+   `cni.name: none`/`proxy.disabled` (`KubeProxyConfig` mit `enabled: false`
+   scheitert auf Workern — das Dokument ist Control-Plane-only, fehlend heisst
+   deaktiviert), und fuer Gleichstand `SecurityProfileConfig`,
+   `FilesystemTrimConfig` sowie `VolumeConfig` `EPHEMERAL` (neu `nosuid,nodev`
+   auf `/var`) ebenfalls per `$patch: delete`,
+3. erst **nachdem** alle Nodes auf 1.14 laufen (1.13 kennt die Dokumente nicht),
+   pro Node `talosctl apply-config --dry-run` zu pruefen und dann einzeln
+   (`-parallelism=1` bzw. `-target`) auszurollen.
 
 ---
 

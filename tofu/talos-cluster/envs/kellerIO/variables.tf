@@ -75,7 +75,7 @@ variable "cluster_endpoint_ip" {
 variable "talos_version" {
   type = string
   # renovate: datasource=github-releases depName=siderolabs/talos versioning=semver
-  default = "v1.13.4"
+  default = "v1.14.4"
 }
 
 variable "talos_schematic_id" {
