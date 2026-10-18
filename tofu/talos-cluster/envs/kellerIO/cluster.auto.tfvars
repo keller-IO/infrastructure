@@ -82,20 +82,36 @@ nodes = [
     # 5 der 6 CNPG-Primaries — ein falscher Eintrag laesst jeden plan die VM
     # zerstoeren und neu bauen. Vor jedem Lauf gegen
     # `pvesh get /cluster/resources` pruefen.
+    #
+    # 18.10.2026: 8 -> 12 GB (wie wrk2). lat7440 traegt kein Ceph, hat 32 GB
+    # (verloetet, Maximum) und behaelt danach ~4,5 GB Reserve.
     target_pve = "lat7440"
     ip_address = "192.168.2.84"
+    memory_mb  = 12288
     role       = "worker"
   },
   {
-    name       = "kellerio-wrk2"
+    name = "kellerio-wrk2"
+    # 18.10.2026: 8 -> 12 GB. Worker-Requests 25.817 MiB lagen bei 63 %, N-1
+    # (Ausfall wrk5) bei 87 %; mit wrk1+wrk2 auf 12 GB 52 % bzw. 68 %.
+    # Nur Hosts ohne nennenswerte Ceph-Last: cloud58 hat kein OSD/Mon/MDS.
+    # wrk3 bleibt 8 GB (cloud64 swappt, Mon+aktiver Mgr+RGW), wrk4 ebenso
+    # (cloud62 traegt osd.0). Alle Hosts ausser cloud59/65 stehen bereits auf
+    # dem Board-Maximum von 32 GB — mehr RAM geht nur durch Umverteilen.
+    # Live per `qm set` + Drain + `qm reboot` gesetzt; dieser Eintrag gleicht
+    # nur an (Modul setzt kein reboot_after_update, apply ohne -target verboten).
     target_pve = "cloud58"
     ip_address = "192.168.2.85"
+    memory_mb  = 12288
     role       = "worker"
   },
   {
-    name       = "kellerio-wrk3"
+    name = "kellerio-wrk3"
+    # 18.10.2026: 8 -> 12 GB, nachdem db11 (VM 2023, 4 GB) per HA-Prioritaet
+    # nach cloud67 umgezogen ist. Vorher swappte cloud64 bereits 2,5 GB.
     target_pve = "cloud64"
     ip_address = "192.168.2.86"
+    memory_mb  = 12288
     role       = "worker"
   },
   {
@@ -222,6 +238,35 @@ extra_config_patches = [
     machine = {
       network = {
         nameservers = ["192.168.2.10", "9.9.9.9"]
+      }
+    }
+  }
+]
+
+# 18.10.2026 (kubernetes-gitops#287): Talos-API-Zugang fuer den
+# system-upgrade-controller. Talos erzeugt fuer eine talos.dev-ServiceAccount-CR
+# im erlaubten Namespace selbst ein Secret mit talosconfig (Key `config`):
+# Client-Zertifikat der OS-CA, 6 h gueltig, 1 h vor Ablauf automatisch erneuert.
+# Damit liegt kein langlebiges Admin-Zertifikat in Git, im Tofu-State oder im
+# Cluster. Die CR selbst liegt im GitOps-Repo (system-upgrade-controller).
+#
+# `os:admin` ist noetig: In Talos 1.13 verlangt MachineService/Upgrade genau
+# diese Rolle (internal/app/machined/pkg/system/services/machined.go),
+# `os:operator` reicht nicht. Begrenzt wird ueber den Namespace: nur CRs in
+# `system-upgrade-controller` bekommen ein Zertifikat, und nur dessen Jobs
+# mounten es.
+#
+# Nur Control Planes: Talos lehnt das Feature auf Workern ab ("can only be
+# enabled on control plane machines").
+extra_controlplane_config_patches = [
+  {
+    machine = {
+      features = {
+        kubernetesTalosAPIAccess = {
+          enabled                     = true
+          allowedRoles                = ["os:admin"]
+          allowedKubernetesNamespaces = ["system-upgrade-controller"]
+        }
       }
     }
   }

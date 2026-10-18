@@ -29,7 +29,7 @@ module "nodes" {
 
 # Platform-agnostic Talos cluster configuration applied to those VMs.
 module "cluster" {
-  source = "git::https://github.com/kreativmonkey/terraform-module.git//talos-cluster?ref=v0.1.1"
+  source = "git::https://github.com/keller-IO/terraform-module.git//talos-cluster?ref=cde8b0959d3ff5f2243b900be6f2369a96286f73"
 
   cluster_name        = var.cluster_name
   cluster_endpoint_ip = var.cluster_endpoint_ip
@@ -42,8 +42,9 @@ module "cluster" {
   network_subnet       = var.network_subnet
   kubelet_valid_subnet = var.kubelet_valid_subnet
 
-  nodes                = module.nodes.talos_nodes
-  extra_config_patches = var.extra_config_patches
+  nodes                             = module.nodes.talos_nodes
+  extra_config_patches              = var.extra_config_patches
+  extra_controlplane_config_patches = var.extra_controlplane_config_patches
 
   # Configure Talos only after the VMs exist and are reachable.
   depends_on = [module.nodes]
