@@ -188,3 +188,9 @@ variable "extra_controlplane_config_patches" {
   type        = list(any)
   default     = []
 }
+
+variable "node_config_patches" {
+  description = "Additional Talos config patches for single nodes, keyed by node name (e.g. machine.nodeLabels)."
+  type        = map(list(any))
+  default     = {}
+}
