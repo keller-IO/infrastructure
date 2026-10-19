@@ -96,29 +96,92 @@ Reihenfolge wichtig — erst aus K8s/etcd raus, dann VM zerstören.
 
 ## 4. Talos-Upgrade
 
-**Datei:** `cluster.auto.tfvars` (`talos_version`, hat `# renovate:`-Marker).
+**Owner des OS-Upgrades ist seit 19.10.2026 der system-upgrade-controller (SUC)**
+in `kubernetes-gitops`: Plan `talos` in
+`infrastructure/base/system-upgrade-controller/talos-plan.yaml`, Ablauf, Drain-
+Regeln und Abnahme in `docs/runbooks/talos-autoupdate.md` dort. Dieses Repo
+liefert nur drei Dinge zu:
 
-1. `talos_version` auf Ziel setzen (z.B. `v1.13.4` → `v1.14.x`), damit Code = Ist:
+- das **Opt-in pro Node**: `node_config_patches` in `cluster.auto.tfvars` setzt
+  `machine.nodeLabels."keller.io/talos-upgrade" = "enabled"`,
+- den **Talos-API-Zugang des SUC** (`kubernetesTalosAPIAccess` in
+  `extra_controlplane_config_patches`, #19),
+- `talos_version` als **Install-/Bootstrap-Version** (`machine.install.image`,
+  ISO, `talos_machine_secrets`). Sie **folgt** dem Rollout, sie steuert ihn nicht.
+
+### Ablauf
+
+1. **Node freigeben:** Label in `node_config_patches` ergaenzen, PR, dann gezielt
+   nur diesen Node anwenden:
    ```bash
-   just plan && just apply
+   tofu apply -target='module.cluster.talos_machine_configuration_apply.cp["kellerio-cp1"]'
+   # Worker: module.cluster.talos_machine_configuration_apply.worker["kellerio-wrkN"]
    ```
-2. Nodes nacheinander auf das neue Installer-Image heben (Schematic-ID aus tfvars):
-   ```bash
-   talosctl -n 192.168.2.81 upgrade \
-     --image factory.talos.dev/installer/<talos_schematic_id>:v1.14.x
-   ```
-   Pro Node einzeln, Health abwarten:
-   ```bash
-   talosctl -n 192.168.2.81 health
-   kubectl get nodes
-   ```
-   Reihenfolge: Control-Planes (.81→.82→.83) zuerst, dann Worker (.84→.85→.86).
-3. Kubernetes-Version separat anheben (Talos steuert das in-cluster):
+   Talos setzt das Label ohne Reboot, der SUC startet den Upgrade-Job sofort:
+   **Das Apply ist der Upgrade-Start.** Label entfernen stoppt weitere Laeufe,
+   nicht einen laufenden. Canary war cp3 (19.10.); cp2 erst nach Klaerung des
+   SMB-Controller-`emptyDir`, Worker erst nach der DB-/Kapazitaets-Abnahme
+   (Runbook im GitOps-Repo).
+2. **Patch-Updates innerhalb der Minor** hebt Renovate im GitOps-Repo
+   (`version`, `talosctl`-Image, `--image`). Freigegebene Nodes ziehen nach.
+3. **Minor-Sprung (z.B. 1.13 → 1.14):** erst laufen alle Nodes auf der letzten
+   Patch-Version der alten Minor. Dann ein GitOps-PR, der im Plan `version`, das
+   `talosctl`-Image (mindestens Zielversion) und `--image` hebt und die erlaubte
+   Versionslinie in `renovate.json` anpasst. Keine Minor ueberspringen. Pfad ist
+   immer `factory.talos.dev/nocloud-installer/<talos_schematic_id>:<version>`;
+   ab Talos 1.14 gibt es kein `ghcr.io/siderolabs/installer` mehr, und ein
+   generisches Image verliert die Schematic.
+4. **Erst wenn alle Nodes die Zielversion melden**, hier `talos_version` auf
+   genau diese Version setzen (Code = Ist). Im Plan erwartet:
+   `talos_machine_secrets` nur *update in-place* (die Certs stehen auf
+   „known after apply“, die PKI bleibt), je Node ein Config-Apply, das nur
+   `machine.install.image` aendert, und ein neues ISO auf `cephfs` (an keine VM
+   gehaengt). Steht bei `talos_machine_secrets` `must be replaced`, sofort
+   abbrechen: Der Provider ersetzt bei einem **Downgrade** von `talos_version`,
+   das waere eine neue Cluster-PKI. Deshalb `talos_version` nie vorab auf eine
+   Version setzen, die spaeter wieder zurueckgenommen werden koennte.
+5. **Kubernetes** separat anheben, Talos-OS-Updates fassen es nicht an:
    ```bash
    talosctl -n 192.168.2.80 upgrade-k8s --to 1.3x.y
    ```
 
-> Immer **ein Node nach dem anderen**. CP-Quorum (mind. 2 von 3) muss erhalten bleiben.
+> Immer **ein Node nach dem anderen**. CP-Quorum (mind. 2 von 3) muss erhalten
+> bleiben. SUC und ein manuelles `talosctl upgrade` nie gleichzeitig.
+
+**Fallback von Hand** (nur wenn der SUC aus ist oder der Node kein Label hat):
+```bash
+talosctl -n 192.168.2.81 upgrade \
+  --image factory.talos.dev/nocloud-installer/<talos_schematic_id>:<version>
+talosctl -n 192.168.2.81 health
+kubectl get nodes
+```
+Reihenfolge: Control-Planes (.81→.82→.83), dann Worker (.84→.88).
+`talosctl` muss mindestens die Zielversion haben.
+
+### Config-Contract und Talos-Provider
+
+`talos_version` hebt nur das **installierte OS**. Der Config-Contract (welche
+Dokumente und Defaults die Machine-Config enthaelt) haengt am Talos-Provider,
+weil das Modul `talos-cluster` (keller-IO-Ref `b69b569`, Basis v0.1.1) ihn
+nicht setzt. Deshalb ist der Provider in `versions.tf` auf `~> 0.11.0`
+(Contract v1.13) festgenagelt. Nicht per `tofu init -upgrade` oder Renovate auf
+0.12 heben, ohne gleichzeitig:
+
+1. das Modul auf `talos-cluster` **v0.5.0** zu heben und dort
+   `kubernetes_version` (= laufende Version), `secrets_talos_version` (= Wert im
+   State) und `install_disk = "/dev/sda"` zu setzen; `node_config_patches` und
+   `extra_controlplane_config_patches` muessen dabei erhalten bleiben,
+2. `extra_config_patches` auf Multi-Doc-YAML umzustellen (`list(string)`):
+   `ResolverConfig` statt `machine.network.nameservers`,
+   `KubeFlannelCNIConfig` und `KubeProxyConfig` per `$patch: delete` statt
+   `cni.name: none`/`proxy.disabled` (`KubeProxyConfig` mit `enabled: false`
+   scheitert auf Workern — das Dokument ist Control-Plane-only, fehlend heisst
+   deaktiviert), und fuer Gleichstand `SecurityProfileConfig`,
+   `FilesystemTrimConfig` sowie `VolumeConfig` `EPHEMERAL` (neu `nosuid,nodev`
+   auf `/var`) ebenfalls per `$patch: delete`,
+3. erst **nachdem** alle Nodes auf 1.14 laufen (1.13 kennt die Dokumente nicht),
+   pro Node `talosctl apply-config --dry-run` zu pruefen und dann einzeln
+   (`-parallelism=1` bzw. `-target`) auszurollen.
 
 ---
 
