@@ -182,7 +182,7 @@ nodes = [
 # Talos image (guest_agent nfs_tools) — same schematic as homelab-kube.
 talos_schematic_id = "3abf06e1d81e509d779dc256f9feae6cd6d82c69337c661cbfc383a92594faf5"
 # renovate: datasource=github-releases depName=siderolabs/talos versioning=semver
-talos_version  = "v1.13.4"
+talos_version  = "v1.14.4"
 image_platform = "nocloud"
 image_arch     = "amd64"
 
@@ -287,17 +287,34 @@ extra_controlplane_config_patches = [
 # das Label da ist: Ein Apply mit neuem Label IST der Upgrade-Start fuer diesen
 # Node. Entfernen des Labels stoppt weitere Laeufe, nicht einen laufenden.
 #
-# 19.10.2026: Canary cp3. Dort laufen keine normalen Drain-Kandidaten und keine
-# DB-Instanzen, aber der SUC-Controller selbst; der Lauf prueft damit auch
-# dessen Umzug. cp2 erst nach Klaerung des SMB-Controller-socket-dir-emptyDir.
+# 19.10.2026: Canary cp3 lief durch, danach alle Nodes freigegeben. SUC arbeitet
+# sie nacheinander ab (concurrency 1); vor jedem Drain prueft der Preflight den
+# ganzen Cluster. Talos-Versionen kommen per Renovate-PR im GitOps-Repo, der
+# manuelle Merge dort startet den Rollout. Einen Node herausnehmen: Eintrag hier
+# entfernen und gezielt applien.
 node_config_patches = {
+  "kellerio-cp1" = [
+    { machine = { nodeLabels = { "keller.io/talos-upgrade" = "enabled" } } }
+  ]
+  "kellerio-cp2" = [
+    { machine = { nodeLabels = { "keller.io/talos-upgrade" = "enabled" } } }
+  ]
   "kellerio-cp3" = [
-    {
-      machine = {
-        nodeLabels = {
-          "keller.io/talos-upgrade" = "enabled"
-        }
-      }
-    }
+    { machine = { nodeLabels = { "keller.io/talos-upgrade" = "enabled" } } }
+  ]
+  "kellerio-wrk1" = [
+    { machine = { nodeLabels = { "keller.io/talos-upgrade" = "enabled" } } }
+  ]
+  "kellerio-wrk2" = [
+    { machine = { nodeLabels = { "keller.io/talos-upgrade" = "enabled" } } }
+  ]
+  "kellerio-wrk3" = [
+    { machine = { nodeLabels = { "keller.io/talos-upgrade" = "enabled" } } }
+  ]
+  "kellerio-wrk4" = [
+    { machine = { nodeLabels = { "keller.io/talos-upgrade" = "enabled" } } }
+  ]
+  "kellerio-wrk5" = [
+    { machine = { nodeLabels = { "keller.io/talos-upgrade" = "enabled" } } }
   ]
 }
