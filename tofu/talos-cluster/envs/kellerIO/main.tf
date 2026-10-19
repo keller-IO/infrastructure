@@ -1,6 +1,6 @@
 # Proxmox VMs that back the Talos nodes.
 module "nodes" {
-  source = "git::https://github.com/keller-IO/terraform-module.git//talos-proxmox-nodes?ref=cde8b0959d3ff5f2243b900be6f2369a96286f73"
+  source = "git::https://github.com/keller-IO/terraform-module.git//talos-proxmox-nodes?ref=b69b5696a6d93b08739c717d15a3566f859610c0"
 
   nodes = var.nodes
 
@@ -29,7 +29,7 @@ module "nodes" {
 
 # Platform-agnostic Talos cluster configuration applied to those VMs.
 module "cluster" {
-  source = "git::https://github.com/keller-IO/terraform-module.git//talos-cluster?ref=cde8b0959d3ff5f2243b900be6f2369a96286f73"
+  source = "git::https://github.com/keller-IO/terraform-module.git//talos-cluster?ref=b69b5696a6d93b08739c717d15a3566f859610c0"
 
   cluster_name        = var.cluster_name
   cluster_endpoint_ip = var.cluster_endpoint_ip
@@ -45,6 +45,7 @@ module "cluster" {
   nodes                             = module.nodes.talos_nodes
   extra_config_patches              = var.extra_config_patches
   extra_controlplane_config_patches = var.extra_controlplane_config_patches
+  node_config_patches               = var.node_config_patches
 
   # Configure Talos only after the VMs exist and are reachable.
   depends_on = [module.nodes]

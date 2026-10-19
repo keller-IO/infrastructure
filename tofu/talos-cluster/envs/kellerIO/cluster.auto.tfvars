@@ -279,3 +279,25 @@ extra_controlplane_config_patches = [
     }
   }
 ]
+
+# Talos-Auto-Updates (kubernetes-gitops, system-upgrade-controller, Plan `talos`)
+# laufen nur auf Nodes mit `keller.io/talos-upgrade=enabled`. Die Freigabe ist
+# bewusst pro Node und deklarativ (kubernetes-gitops#287). Talos setzt
+# nodeLabels ohne Reboot, aber der SUC startet den Upgrade-Job sofort, sobald
+# das Label da ist: Ein Apply mit neuem Label IST der Upgrade-Start fuer diesen
+# Node. Entfernen des Labels stoppt weitere Laeufe, nicht einen laufenden.
+#
+# 19.10.2026: Canary cp3. Dort laufen keine normalen Drain-Kandidaten und keine
+# DB-Instanzen, aber der SUC-Controller selbst; der Lauf prueft damit auch
+# dessen Umzug. cp2 erst nach Klaerung des SMB-Controller-socket-dir-emptyDir.
+node_config_patches = {
+  "kellerio-cp3" = [
+    {
+      machine = {
+        nodeLabels = {
+          "keller.io/talos-upgrade" = "enabled"
+        }
+      }
+    }
+  ]
+}
