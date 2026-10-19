@@ -1,6 +1,6 @@
 # Proxmox VMs that back the Talos nodes.
 module "nodes" {
-  source = "git::https://github.com/keller-IO/terraform-module.git//talos-proxmox-nodes?ref=2fa78d5aedfb34e54b7d2e5d7033c635d780687d"
+  source = "git::https://github.com/keller-IO/terraform-module.git//talos-proxmox-nodes?ref=cde8b0959d3ff5f2243b900be6f2369a96286f73"
 
   nodes = var.nodes
 
@@ -29,7 +29,7 @@ module "nodes" {
 
 # Platform-agnostic Talos cluster configuration applied to those VMs.
 module "cluster" {
-  source = "git::https://github.com/keller-IO/terraform-module.git//talos-cluster?ref=2fa78d5aedfb34e54b7d2e5d7033c635d780687d"
+  source = "git::https://github.com/keller-IO/terraform-module.git//talos-cluster?ref=cde8b0959d3ff5f2243b900be6f2369a96286f73"
 
   cluster_name        = var.cluster_name
   cluster_endpoint_ip = var.cluster_endpoint_ip
