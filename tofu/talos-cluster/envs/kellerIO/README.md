@@ -23,7 +23,8 @@ modules, so the modules stay GitOps-agnostic.
 
 ## Topology
 
-Talos **v1.13.4** (latest stable). Node IPs start at `192.168.2.81`; the
+Talos **v1.13.4** as bootstrap/install version; OS upgrades are rolled out by
+the system-upgrade-controller from `kubernetes-gitops` (see Notes). Node IPs start at `192.168.2.81`; the
 control-plane VIP / Kubernetes API endpoint is `192.168.2.80`.
 
 | Node | Role | Proxmox host | IP | vCPU | RAM | OS disk |
@@ -205,16 +206,28 @@ just destroy-cluster    # destroys only the Talos VMs (keeps cluster secrets in 
 
 ## Notes
 
-- **Talos version:** pinned to `v1.13.4` (latest stable as of 2026-06). It is a
-  patch bump over the module default (`v1.13.2`) within the same `1.13` minor, so
-  the `v1alpha1` machine-config schema is unchanged — **no module changes were
-  required**. Renovate keeps the pin current via the annotation in
-  `cluster.auto.tfvars`.
+- **Talos version:** `talos_version` is the install/bootstrap version
+  (`machine.install.image`, ISO, `talos_machine_secrets`). Since 2026-10-19 the
+  OS upgrade itself is owned by the system-upgrade-controller in
+  `kubernetes-gitops` (plan `talos`); nodes opt in via the
+  `keller.io/talos-upgrade=enabled` label in `node_config_patches`. Bump
+  `talos_version` here only **after** every node reports the new version, never
+  ahead of the rollout: lowering it again later would replace
+  `talos_machine_secrets` (new cluster PKI). See
+  `docs/runbooks/day2-operations.md` §4.
+- **Talos provider pinned to `~> 0.11.0`** (`versions.tf`). The `talos-cluster`
+  module (keller-IO ref `b69b569`, based on v0.1.1) does not pass
+  `talos_version`/`kubernetes_version` to `talos_machine_configuration`, so both
+  default to the provider's machinery. Provider 0.12 would silently switch the
+  contract to v1.14 and the Kubernetes component images to 1.37: our legacy
+  patches fail validation under that contract, and it would additionally deploy
+  Flannel and kube-proxy next to Cilium. Lift the pin only together with the
+  move to module v0.5.0 (runbook §4).
 - **Storage:** external Ceph via ceph-csi (deployed through Argo CD). No Longhorn,
   no local data disks (`default_longhorn_disk_gb = 0`).
 - **`kubelet_valid_subnet`** is set to `192.168.2.0/24` and forwarded to the
   `cluster` module so the kubelet registers a node IP from the kellerIO LAN
   (metrics-server / exec / port-forward depend on this).
-- **Schematic ID** matches homelab-kube (bundles `qemu-guest-agent`,
-  `iscsi-tools`, `nfs-tools`); regenerate at <https://factory.talos.dev/> if you
+- **Schematic ID** matches homelab-kube (bundles `qemu-guest-agent` and
+  `nfs-utils`, per `factory.talos.dev/schematics/<id>`); regenerate at <https://factory.talos.dev/> if you
   need different system extensions.
