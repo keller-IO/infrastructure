@@ -182,7 +182,7 @@ nodes = [
 # Talos image (guest_agent nfs_tools) — same schematic as homelab-kube.
 talos_schematic_id = "3abf06e1d81e509d779dc256f9feae6cd6d82c69337c661cbfc383a92594faf5"
 # renovate: datasource=github-releases depName=siderolabs/talos versioning=semver
-talos_version  = "v1.13.4"
+talos_version  = "v1.14.4"
 image_platform = "nocloud"
 image_arch     = "amd64"
 
