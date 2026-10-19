@@ -128,10 +128,18 @@ nodes = [
     # bpg/proxmox die VM aus (vmPowerOffForPendingChanges). Deshalb pinnt
     # `cloudinit_storage_id` den Ist-Stand. Verschieben nur in einem geplanten
     # Wartungsfenster mit gedrainter wrk4, danach die Zeile entfernen.
-    target_pve           = "cloud62"
-    cloudinit_storage_id = "vmimages"
-    ip_address           = "192.168.2.87"
-    role                 = "worker"
+    #
+    # 19.10.2026: 8 -> 12 GB, damit alle Worker mindestens 12 GB haben. Platz
+    # auf cloud62 kam von talk01-dev (2024) und talk01 (2037), die live nach
+    # pve-media umgezogen sind. wrk4 selbst nach pve-media passte nicht
+    # (10,5 GB frei, kein Swap, 4 Kerne, 2 OSDs). Im selben Wartungsfenster
+    # (wrk4 gedrained) das Cloud-Init-Laufwerk live nach `local-zfs` umgehaengt,
+    # das alte RBD `vmimages:vm-2014-cloudinit` entfernt — der Pin
+    # `cloudinit_storage_id` ist damit entfallen.
+    target_pve = "cloud62"
+    ip_address = "192.168.2.87"
+    memory_mb  = 12288
+    role       = "worker"
   },
   {
     name = "kellerio-wrk5"
