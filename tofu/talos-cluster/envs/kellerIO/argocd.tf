@@ -104,6 +104,12 @@ resource "helm_release" "argocd" {
       ]
     }
 
+    # Wie in values.yaml im GitOps-Repo abgeschaltet (Login direkt per OIDC an
+    # Keycloak, keine Notifications). Sonst legt der Bootstrap beide an, und Argo
+    # CD raeumt sie nie weg: Objekte ohne Tracking-Annotation werden nicht geprunt
+    # und bleiben auf der Bootstrap-Version stehen.
+    dex           = { enabled = false }
+    notifications = { enabled = false }
   })]
 
   depends_on = [
