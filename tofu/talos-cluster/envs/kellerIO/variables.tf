@@ -50,7 +50,7 @@ variable "argocd_chart_version" {
   description = "argo-cd Helm chart version (https://github.com/argoproj/argo-helm)."
   type        = string
   # renovate: datasource=helm depName=argo-cd registryUrl=https://argoproj.github.io/argo-helm
-  default = "9.5.21"
+  default = "10.18.0"
 }
 
 variable "ksops_image" {
